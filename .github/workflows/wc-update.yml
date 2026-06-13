@@ -1,0 +1,31 @@
+name: Update WC Results
+
+on:
+  schedule:
+    - cron: '0 0,4,8,12,16,20 * * *'  # every 4 hours UTC
+  workflow_dispatch:                    # manual trigger button in GitHub UI
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests
+
+      - name: Fetch results and patch dashboards
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+        run: python wc_updater.py
+
+      - name: Commit updated dashboards
+        run: |
+          git config user.name  "wc-bot"
+          git config user.email "wc-bot@users.noreply.github.com"
+          git add WorldCupDashboard-*.html wc_banter.txt || true
+          git diff --cached --quiet || git commit -m "chore: update WC results [skip ci]"
+          git push
