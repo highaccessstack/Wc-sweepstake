@@ -2,9 +2,9 @@
 """
 wc_updater.py — World Cup 2026 Sweepstake Dashboard Updater
 
-Fetches live results from api-football.com and patches all 3 dashboard HTML files.
+Fetches live results from football-data.org and patches all 3 dashboard HTML files.
 
-Budget: ~2 API calls per run × 6 runs/day = 12 calls/day (free tier: 100/day)
+Sign up free at https://www.football-data.org/ — no daily limit, covers WC 2026.
 
 Usage:
   python wc_updater.py              # fetch + patch dashboards
@@ -13,7 +13,7 @@ Usage:
   python wc_updater.py --force-demo # patch with fake demo data (no API call)
 
 API key priority:
-  1. Env var: API_FOOTBALL_KEY
+  1. Env var: FOOTBALL_DATA_KEY  (or legacy: API_FOOTBALL_KEY)
   2. File:    api_key.txt (single line, in same directory as this script)
 """
 
@@ -44,10 +44,9 @@ RESULTS_JSON  = SCRIPT_DIR / 'wc_results.json'
 BANTER_TXT    = SCRIPT_DIR / 'wc_banter.txt'
 API_KEY_FILE  = SCRIPT_DIR / 'api_key.txt'
 
-# ── API ───────────────────────────────────────────────────────────────────────
-BASE_URL    = 'https://v3.football.api-sports.io'
-WC_LEAGUE   = 1      # FIFA World Cup league ID on api-football
-WC_SEASON   = 2026
+# ── API (football-data.org — free tier covers WC) ────────────────────────────
+BASE_URL = 'https://api.football-data.org/v4'
+# api-football free tier only covers up to season 2024; football-data.org is free for WC
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -80,33 +79,39 @@ STAGE_POINTS = {
     'Champion':          25,
 }
 
-# Map api-football round strings → stage label assigned to the LOSER
+# football-data.org stage → stage label assigned to the LOSER
 ROUND_TO_STAGE = {
-    'Round of 32':    'Round of 32',
-    'Round of 16':    'Round of 16',
-    'Quarter-finals': 'Quarterfinals',
-    'Semi-finals':    'Semifinals',
-    # 3rd Place Final loser = 4th place, same Semifinals points as winner
-    '3rd Place Final': 'Semifinals',
-    # Final is handled separately: winner=Champion, loser=Final (runner-up)
+    'ROUND_OF_32':    'Round of 32',
+    'ROUND_OF_16':    'Round of 16',
+    'QUARTER_FINALS': 'Quarterfinals',
+    'SEMI_FINALS':    'Semifinals',
+    # 3rd place loser = 4th place, same Semifinals points
+    'THIRD_PLACE':    'Semifinals',
+    # FINAL is handled separately: winner=Champion, loser=Final (runner-up)
 }
 
 # ── Team name normalisation ───────────────────────────────────────────────────
-# api-football may use different spellings; map to our dashboard names
+# football-data.org may use different spellings; map to our dashboard names
 API_NAME_MAP = {
     'Turkey':                        'T\u00FCrkiye',
     'Turkiye':                       'T\u00FCrkiye',
     "Côte d'Ivoire":                 'C\u00F4te d\u2019Ivoire',
     "Cote d'Ivoire":                 'C\u00F4te d\u2019Ivoire',
     'Ivory Coast':                   'C\u00F4te d\u2019Ivoire',
+    "Côte D'Ivoire":                 'C\u00F4te d\u2019Ivoire',
     'Curacao':                       'Cura\u00E7ao',
+    'Curaçao':                       'Cura\u00E7ao',
     'Czech Republic':                'Czechia',
     'Bosnia-Herzegovina':            'Bosnia and Herzegovina',
+    'Bosnia & Herzegovina':          'Bosnia and Herzegovina',
     'Congo DR':                      'DR Congo',
     'Democratic Republic of Congo':  'DR Congo',
     'Korea Republic':                'South Korea',
     'Korea South':                   'South Korea',
+    'Republic of Korea':             'South Korea',
     'United States':                 'USA',
+    'USA':                           'USA',
+    'New Zealand':                   'New Zealand',
 }
 
 ALL_TEAMS = {
@@ -270,7 +275,9 @@ def build_rivalry_banter(results):
 
 # ── API helpers ───────────────────────────────────────────────────────────────
 def _load_api_key():
-    key = os.environ.get('API_FOOTBALL_KEY', '').strip()
+    # Support both old and new env var names
+    key = (os.environ.get('API_FOOTBALL_KEY', '') or
+           os.environ.get('FOOTBALL_DATA_KEY', '')).strip()
     if key:
         return key
     if API_KEY_FILE.exists():
@@ -281,8 +288,7 @@ def _load_api_key():
 
 def api_get(endpoint, params=None, api_key=None):
     url = f'{BASE_URL}/{endpoint}'
-    headers = {'x-apisports-key': api_key}
-    # Corporate SSL proxies use self-signed certs; fall back to verify=False if needed
+    headers = {'X-Auth-Token': api_key}
     try:
         resp = requests.get(url, headers=headers, params=params or {}, timeout=30)
     except requests.exceptions.SSLError:
@@ -291,14 +297,9 @@ def api_get(endpoint, params=None, api_key=None):
         resp = requests.get(url, headers=headers, params=params or {}, timeout=30, verify=False)
     resp.raise_for_status()
     data = resp.json()
-    errs = data.get('errors')
-    if errs and errs != [] and errs != {}:
-        raise RuntimeError(f'API errors: {errs}')
-    log.info('GET %s params=%s → %d results, quota remaining=%s',
-             endpoint, params,
-             data.get('results', 0),
-             data.get('paging', {}) or data.get('remaining', '?'))
-    return data.get('response', [])
+    matches = data.get('matches', [])
+    log.info('GET %s -> %d matches', endpoint, len(matches))
+    return matches
 
 def normalise(api_name):
     return API_NAME_MAP.get(api_name, api_name)
@@ -307,48 +308,45 @@ def normalise(api_name):
 def compute_results(fixtures):
     """
     Walk all completed fixtures to determine each team's furthest stage reached.
-    The stage stored is the furthest round they survived to, or the round they were
-    eliminated in for knockout rounds.
+    Uses football-data.org match format (stage: GROUP_STAGE, ROUND_OF_32, etc.)
     """
     gf = {t: 0 for t in ALL_TEAMS}
     ga = {t: 0 for t in ALL_TEAMS}
 
-    # Track how many group games each team has completed
-    group_games = {t: 0 for t in ALL_TEAMS}
-
-    # Which teams have appeared in each knockout round's fixtures (as participants)
-    ko_participants = {}   # round_key → set of teams
-    # Which teams lost a completed knockout game
-    ko_losers = {}         # round_key → set of teams
-    # Track Final specifically
+    ko_participants = {}   # stage_key → set of teams
+    ko_losers = {}         # stage_key → set of teams
     final_winner = None
     final_loser  = None
 
-    FINISHED = {'FT', 'AET', 'PEN'}
+    KO_ORDER = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'THIRD_PLACE', 'FINAL']
+    PREV_STAGE = {
+        'ROUND_OF_32':    'Group stage exit',
+        'ROUND_OF_16':    'Round of 32',
+        'QUARTER_FINALS': 'Round of 16',
+        'SEMI_FINALS':    'Quarterfinals',
+        'THIRD_PLACE':    'Semifinals',
+    }
 
     for f in fixtures:
-        rnd    = f['league']['round'] or ''
-        status = f['fixture']['status']['short']
-        home   = normalise(f['teams']['home']['name'])
-        away   = normalise(f['teams']['away']['name'])
-        hg     = f['goals']['home'] or 0
-        ag     = f['goals']['away'] or 0
+        stage  = f.get('stage', '')
+        status = f.get('status', '')
+        home   = normalise(f['homeTeam']['name'])
+        away   = normalise(f['awayTeam']['name'])
+        hg     = f['score']['fullTime'].get('home') or 0
+        ag     = f['score']['fullTime'].get('away') or 0
 
-        is_finished = status in FINISHED
+        is_finished = status == 'FINISHED'
 
-        if 'Group Stage' in rnd:
+        if stage == 'GROUP_STAGE':
             if is_finished:
                 if home in ALL_TEAMS:
                     gf[home] += hg; ga[home] += ag
-                    group_games[home] += 1
                 if away in ALL_TEAMS:
                     gf[away] += ag; ga[away] += hg
-                    group_games[away] += 1
         else:
-            # Knockout: track who participated
-            ko_participants.setdefault(rnd, set())
-            if home in ALL_TEAMS: ko_participants[rnd].add(home)
-            if away in ALL_TEAMS: ko_participants[rnd].add(away)
+            ko_participants.setdefault(stage, set())
+            if home in ALL_TEAMS: ko_participants[stage].add(home)
+            if away in ALL_TEAMS: ko_participants[stage].add(away)
 
             if is_finished:
                 if home in ALL_TEAMS:
@@ -356,34 +354,28 @@ def compute_results(fixtures):
                 if away in ALL_TEAMS:
                     gf[away] += ag; ga[away] += hg
 
-                home_won = f['teams']['home'].get('winner')
-                away_won = f['teams']['away'].get('winner')
+                winner_side = f['score'].get('winner')  # 'HOME_TEAM', 'AWAY_TEAM', 'DRAW'
+                if winner_side == 'HOME_TEAM':
+                    winner, loser = home, away
+                elif winner_side == 'AWAY_TEAM':
+                    winner, loser = away, home
+                else:
+                    winner, loser = None, None
 
-                loser  = home if away_won else (away if home_won else None)
-                winner = away if away_won else (home if home_won else None)
-
-                if rnd == 'Final':
+                if stage == 'FINAL':
                     if winner and winner in ALL_TEAMS: final_winner = winner
                     if loser  and loser  in ALL_TEAMS: final_loser  = loser
                 else:
-                    ko_losers.setdefault(rnd, set())
+                    ko_losers.setdefault(stage, set())
                     if loser and loser in ALL_TEAMS:
-                        ko_losers[rnd].add(loser)
-
-    # ── Determine each team's stage ───────────────────────────────────────────
-    # We know Round of 32 participants → these teams survived the group stage.
-    # Teams that played 3 group games but aren't in ko_participants['Round of 32']
-    # (once that round exists) were eliminated at the group stage.
-    r32_exists = 'Round of 32' in ko_participants
+                        ko_losers[stage].add(loser)
 
     results = {}
     for team in ALL_TEAMS:
         stage = 'Group stage exit'
 
-        # Find the highest knockout round this team participated in
         highest_ko = None
-        for rnd in ['Round of 32', 'Round of 16', 'Quarter-finals',
-                    'Semi-finals', '3rd Place Final', 'Final']:
+        for rnd in KO_ORDER:
             if team in ko_participants.get(rnd, set()):
                 highest_ko = rnd
 
@@ -391,27 +383,12 @@ def compute_results(fixtures):
             stage = 'Champion'
         elif team == final_loser:
             stage = 'Final (runner-up)'
-        elif highest_ko and highest_ko != 'Final':
-            # Lost in this round?
+        elif highest_ko and highest_ko != 'FINAL':
             if team in ko_losers.get(highest_ko, set()):
                 stage = ROUND_TO_STAGE.get(highest_ko, 'Group stage exit')
             else:
-                # Still alive in this round (game not yet played or in progress)
-                # Show the PREVIOUS completed stage as their current best
-                prev = {
-                    'Round of 32':    'Group stage exit',
-                    'Round of 16':    'Round of 32',
-                    'Quarter-finals': 'Round of 16',
-                    'Semi-finals':    'Quarterfinals',
-                    '3rd Place Final':'Semifinals',
-                }
-                # If they're in this round but haven't lost, they're alive
-                # Keep their stage as the round they survived to
-                # (i.e., they made it past the previous round)
-                stage = prev.get(highest_ko, 'Group stage exit')
-                # Special: if in Round of 32 and group stage is done, they survived
-                if highest_ko == 'Round of 32':
-                    stage = 'Group stage exit'  # haven't won a KO game yet
+                # Still alive — show the stage they survived to reach this round
+                stage = PREV_STAGE.get(highest_ko, 'Group stage exit')
 
         results[team] = {'stage': stage, 'gf': gf[team], 'ga': ga[team]}
 
@@ -657,9 +634,10 @@ def main():
         if not api_key:
             log.error(
                 'No API key found.\n'
-                '  Option A: set env var  API_FOOTBALL_KEY=your_key\n'
+                '  Option A: set env var  FOOTBALL_DATA_KEY=your_key\n'
                 '  Option B: create file  api_key.txt  with your key on one line\n'
-                '  Option C: run with     --force-demo  (no API, fake data)'
+                '  Option C: run with     --force-demo  (no API, fake data)\n'
+                '  Sign up free at https://www.football-data.org/'
             )
             sys.exit(1)
 
@@ -669,9 +647,7 @@ def main():
         results = _demo_results()
     else:
         try:
-            fixtures = api_get('fixtures',
-                               {'league': WC_LEAGUE, 'season': WC_SEASON},
-                               api_key=api_key)
+            fixtures = api_get('competitions/WC/matches', api_key=api_key)
             log.info('Fetched %d fixtures', len(fixtures))
         except Exception as e:
             log.error('API fetch failed: %s', e)
