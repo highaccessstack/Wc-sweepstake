@@ -863,63 +863,125 @@ function initReveal(){
 let _banterLines=[];
 let _banterIdx=0;
 
+const BANTER_RIVALRY_MATRIX={
+  EURO_DRAMA:[
+    'A masterclass in tactical rolling incoming. More minutes spent on the grass than moving the ball.',
+    'The referee will need a calculator for the imaginary yellow cards being waved around.',
+    'A beautiful display of tactical diving mixed with pure outrage when the whistle is not blown.',
+  ],
+  LATIN_WARFARE:[
+    '90 minutes of technical flair, 45 minutes of tactical arguments, and 12 separate dressing room feuds.',
+    'The tactical fouling will be a work of art. Ankles will be targeted. Tears will be shed.',
+    'Expect a masterclass in crowding the referee the second anyone gets tackled.',
+  ],
+  STEREOTYPES:{
+    'England':      'preparing the generic media scapegoat for the inevitable penalty shootout disaster',
+    'Germany':      'calculated, precise, and completely devoid of joy until they win the whole thing',
+    'Brazil':       'spending three minutes dancing after a tap-in then fifteen minutes weeping when touched',
+    'France':       'packing incredible depth but there is a 50% chance the squad will strike by Matchday 2',
+    'Italy':        'defending a 1-0 lead like their lives depend on it and swinging handbags at the first sign of trouble',
+    'Spain':        'completing 1,400 sideways passes and diving like they have been hit by a truck if anyone breathes near them',
+    'Portugal':     'spending half the match on theatrical death rolls and screaming at the linesman',
+    'USA':          'calling a corner kick a set-piece franchise play and already thinking about the commercial break',
+    'Mexico':       'bringing incredible fan passion but mathematically locked into an existential Round-of-16 exit',
+    'Scotland':     'just happy to be here, having a cold beverage, and fully expecting to go home before the laundry is done',
+    'Argentina':    'running on 90% pure stress and treating a yellow card as a badge of honour',
+    'Uruguay':      'treating a standard football match like an unregulated cage fight where shins are optional',
+    'New Zealand':  'leaving the rugby field behind to play a sport where you cannot use your hands',
+    'Australia':    'sliding flat out like a lizard drinking into dangerous tackles and treating the post-match coldie vastly more seriously than the tactical gameplay',
+  }
+};
+
+const _pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+
+function generateContextualSledge(homeTeam,awayTeam){
+  if(!homeTeam||!awayTeam)return'A classic football match. One team will be disappointed.';
+  const theatrical=['Spain','Italy','Portugal','Brazil','Argentina','Uruguay'];
+  const homeT=theatrical.includes(homeTeam);
+  const awayT=theatrical.includes(awayTeam);
+  const s=BANTER_RIVALRY_MATRIX.STEREOTYPES;
+  if(homeTeam==='Australia'||awayTeam==='Australia'){
+    const opp=homeTeam==='Australia'?awayTeam:homeTeam;
+    return _pick([
+      opp+' better pull their head in. Australia is out here sliding flat out like a lizard drinking and has zero regrets.',
+      'Fair dinkum: if '+opp+' thinks they are walking away with points, they have got kangaroos loose in the top paddock.',
+      'Australia is treating this like the post-match coldie is at stake. '+opp+' has been warned.',
+    ]);
+  }
+  if(homeTeam==='New Zealand'||awayTeam==='New Zealand'){
+    const opp=homeTeam==='New Zealand'?awayTeam:homeTeam;
+    return opp+' watch out. New Zealand left the rugby field specifically to ruin someone\'s day in this tournament.';
+  }
+  if(homeT&&awayT)return _pick([...BANTER_RIVALRY_MATRIX.EURO_DRAMA,...BANTER_RIVALRY_MATRIX.LATIN_WARFARE]);
+  if(s[homeTeam]&&s[awayTeam])return homeTeam+': '+s[homeTeam]+'. Meanwhile '+awayTeam+': '+s[awayTeam]+'.';
+  if(s[homeTeam])return homeTeam+' is busy '+s[homeTeam]+'. '+awayTeam+' just has to survive.';
+  if(s[awayTeam])return'Hold firm — '+awayTeam+' is '+s[awayTeam]+'.';
+  return homeTeam+' vs '+awayTeam+'. One side walks away disappointed. Classic football.';
+}
+
+function woodenSpoonRoast(name,score,gf){
+  const g=gf!==1?'s':'';
+  return _pick([
+    '🥄 '+name+' is tracking like a busted plugger — '+score+' points and '+gf+' goal'+g+' from the entire squad. Total shocker.',
+    '📉 '+name+' is flat out like a lizard drinking at the bottom of the table. '+score+' points. Doing absolutely zero work.',
+    '🦘 Kangaroos loose in the top paddock alert: '+name+' is on '+score+' points and wondering where it all went wrong.',
+    '🥄 '+name+' is the proud custodian of the wooden spoon on '+score+' pts. The word competitive is being used very loosely.',
+  ]);
+}
+
 function buildLiveBanter(lb){
-  const lines=[];
   const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
   const countryToOwner={};
   PARTICIPANTS.forEach(u=>{u.teams.forEach(t=>{countryToOwner[t]=u.name;});});
   const todayIso=new Date().toISOString().slice(0,10);
+  const tomorrowIso=new Date(Date.now()+86400000).toISOString().slice(0,10);
 
   if(!started){
-    return[...BANTER_FEED,
+    return[
+      ...BANTER_FEED,
       'The tournament is about to begin. Set your expectations accordingly.',
       '12 players. 48 teams. One champion. The maths is brutal for most of you.',
       'Someone in this group picked Paraguay. That person knows who they are.',
-    ];
+    ].slice(0,5);
   }
 
-  const leader=lb[0];
-  if(leader){
-    if(leader.score>0)lines.push(`🥇 ${leader.name} leads on ${leader.score} pts and is absolutely insufferable about it.`);
-    else lines.push(`📊 Everyone is still on 0 points. Panic is, as yet, premature.`);
-  }
+  const lines=[];
 
+  // 1. Wooden spoon roast — always leads
   const last=lb[lb.length-1];
-  if(last&&last.name!==leader?.name){
-    lines.push(last.score===0
-      ?`⚠️ ${last.name} is propping up the table on 0 points. Their teams have managed ${last.gf} goal${last.gf!==1?'s':''} between them.`
-      :`⚠️ ${last.name} is at the bottom on ${last.score} pts. Room to grow. Probably.`);
+  if(last)lines.push(woodenSpoonRoast(last.name,last.score,last.gf));
+
+  // 2. Leader taunt if there is a clear gap
+  const leader=lb[0];
+  if(leader&&leader.score>0&&lb.length>=2&&leader.score>lb[1].score){
+    const gap=leader.score-lb[1].score;
+    const gapStr=gap!==1?'s':'';
+    lines.push('🥇 '+leader.name+' leads by '+gap+' point'+gapStr+' and is absolutely insufferable about it. '+lb[1].name+' is working on it.');
+  }else if(leader&&leader.score===0){
+    lines.push('📊 Everyone is still on 0 points. The panic will arrive shortly.');
   }
 
-  lb.forEach(e=>{
-    if(e.active===4)lines.push(`💪 ${e.name} still has all 4 teams alive. A genuine threat.`);
-    if(e.active===0)lines.push(`☠️ ${e.name}'s entire squad has been eliminated. They are officially in the wait-until-2030 phase.`);
+  // 3. Today/tomorrow office clashes with contextual sledge (max 2)
+  FIXTURES.filter(fix=>{
+    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
+    return ho&&ao&&ho!==ao&&(fix.d===todayIso||fix.d===tomorrowIso);
+  }).slice(0,2).forEach(fix=>{
+    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
+    const sledge=generateContextualSledge(fix.home,fix.away);
+    const label=fix.d===todayIso?'TODAY':'TOMORROW';
+    lines.push('🔥 OFFICE CLASH '+label+' — '+ho+' ('+fix.home+') vs '+ao+' ('+fix.away+'): '+sledge);
   });
 
-  if(lb.length>=2&&lb[0].score>lb[1].score){
-    const gap=lb[0].score-lb[1].score;
-    lines.push(`📐 ${lb[0].name} leads ${lb[1].name} by ${gap} point${gap!==1?'s':''}. Comfortable or terrifying depending on which side you're on.`);
+  // 4. Stats pad if under 4 lines
+  if(lines.length<4){
+    const topGf=[...lb].sort((a,b)=>b.gf-a.gf)[0];
+    if(topGf&&topGf.gf>0)lines.push('⚽ '+topGf.name+'\'s teams lead the goals chart with '+topGf.gf+' — '+topGf.name+' is cautiously optimistic and insufferably vocal about it.');
   }
 
-  const topGf=[...lb].sort((a,b)=>b.gf-a.gf)[0];
-  if(topGf&&topGf.gf>0)lines.push(`⚽ ${topGf.name}'s teams have scored the most goals — ${topGf.gf} total. Momentum is a thing.`);
+  // 5. Static fallback pad
+  if(lines.length<4)lines.push(...BANTER_FEED);
 
-  const upcomingDuels=FIXTURES.filter(fix=>{
-    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
-    return ho&&ao&&ho!==ao&&fix.d>=todayIso;
-  }).slice(0,2);
-  upcomingDuels.forEach(fix=>{
-    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
-    lines.push(`🔥 UPCOMING OFFICE CLASH: ${ho}'s ${fix.home} faces ${ao}'s ${fix.away} on ${fix.d}. Someone is walking away disappointed.`);
-  });
-
-  Object.entries(RESULTS_DATA).filter(([,d])=>d.gf>=2).sort((a,b)=>b[1].gf-a[1].gf).slice(0,2).forEach(([team,d])=>{
-    const owner=countryToOwner[team];
-    if(owner)lines.push(`⚽ ${team} have scored ${d.gf} goals — ${owner} is cautiously optimistic.`);
-  });
-
-  lines.push(...BANTER_FEED);
-  return lines.filter(Boolean);
+  return lines.filter(Boolean).slice(0,5);
 }
 
 function initBanterTicker(lines){
