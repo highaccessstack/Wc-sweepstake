@@ -390,16 +390,18 @@ function getPoints(t){return POINTS_MAP[getResult(t).stage]??0}
 function getPot(t){return TEAM_POTS[t]||4}
 
 function buildLeaderboard(){
-  const started=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
+  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
   const rows=PARTICIPANTS.map(p=>{
     const score=p.teams.reduce((s,t)=>s+getPoints(t),0);
     const active=p.teams.filter(t=>getResult(t).stage!=='Group stage exit').length;
-    return{...p,score,active};
+    const gf=p.teams.reduce((s,t)=>s+(getResult(t).gf||0),0);
+    return{...p,score,active,gf};
   });
   if(!started)return rows.sort((a,b)=>a.name.localeCompare(b.name)).map((p,i)=>({...p,rank:i+1}));
   rows.sort((a,b)=>{
     if(b.score!==a.score)return b.score-a.score;
     if(b.active!==a.active)return b.active-a.active;
+    if(b.gf!==a.gf)return b.gf-a.gf;
     return a.name.localeCompare(b.name);
   });
   const result=[];
@@ -413,9 +415,12 @@ function buildLeaderboard(){
 }
 
 function calculateInsights(lb){
-  const started=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
+  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
   if(!started)return null;
+  const knockoutsStarted=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
   const hi=lb[0],lo=lb[lb.length-1];
+  const totalGoals=Object.values(RESULTS_DATA).reduce((s,r)=>s+r.gf,0);
+  const matchesPlayed=Math.round(totalGoals/2.5)||1;
   let depPart=null;
   for(const e of lb){
     const pts=e.teams.map(t=>getPoints(t));
@@ -438,6 +443,20 @@ function calculateInsights(lb){
   let bestTeam=null,bestPts=-1;
   for(const e of lb)for(const t of e.teams){const p=getPoints(t);if(p>bestPts){bestPts=p;bestTeam=t;}}
   const activeCount=Object.values(RESULTS_DATA).filter(r=>r.stage!=='Group stage exit').length;
+  // Group stage: show goals-based insights since all pts=0
+  if(!knockoutsStarted){
+    let topGFteam=null,topGF=0;
+    for(const [t,r] of Object.entries(RESULTS_DATA)){if(r.gf>topGF){topGF=r.gf;topGFteam=t;}}
+    let topOwnerGF=null,topOwnerGFval=0;
+    for(const e of lb){const gf=e.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);if(gf>topOwnerGFval){topOwnerGFval=gf;topOwnerGF=e.name;}}
+    const items=[
+      {icon:'\u26BD',label:'Group stage',text:`${totalGoals} goals scored so far`},
+      {icon:'\u{1F3C6}',label:'Top scoring owner',text:`${topOwnerGF||'—'} leads on goals (${topOwnerGFval})`},
+    ];
+    if(topGFteam&&topGF>0)items.push({icon:'\u{1F31F}',label:'Top scoring team',text:`${topGFteam} leads with ${topGF} goals`});
+    items.push({icon:'\u{1F4CA}',label:'Points',text:'Points awarded from Round of 32 onwards'});
+    return items;
+  }
   const items=[
     {icon:'\u{1F3C6}',label:'Leading scorer',text:`${hi.name} leads with ${hi.score} pts`},
     {icon:'\u{1F4C9}',label:'Last place',text:`${lo.name} is bottom with ${lo.score} pts`},
@@ -594,7 +613,7 @@ let order=[],lastDate=todayStr();
 
 function renderAll(){
   const{done}=timeLeft();
-  const started=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
+  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
   const lb=buildLeaderboard();
   const insights=calculateInsights(lb);
   if(!order.length||order.length!==lb.length)order=lb.map((_,i)=>i);
@@ -657,7 +676,7 @@ function renderAll(){
   const shuf=document.getElementById('shuf');
   if(shuf)shuf.onclick=()=>{
     for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
-    const st=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
+    const st=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
     document.getElementById('cgrid').innerHTML=renderCards(buildLeaderboard(),order,st);
     initCounters();
     initReveal();
