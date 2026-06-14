@@ -1118,7 +1118,7 @@ function renderWorkplaceMatchupCards(duels){
     const awayWon=hasScore&&m.ag>m.hg;
     const isHot=!hasScore;
     const badge='';
-const statusLabel=hasScore?'FT '+m.hg+'\u2013'+m.ag:(m.derivedStatus==='today'?'TODAY':m.derivedStatus.toUpperCase());
+const statusLabel=hasScore?'Result '+m.hg+' \u2013 '+m.ag:(m.derivedStatus==='today'?'TODAY':m.derivedStatus.toUpperCase());
     const statusClass=hasScore?'finished':m.derivedStatus;
     const homeWinBadge=homeWon?' <span style="color:#ffd700;font-size:11px;font-weight:700">🏆 WIN</span>':'';
     const awayWinBadge=awayWon?' <span style="color:#ffd700;font-size:11px;font-weight:700">🏆 WIN</span>':'';
