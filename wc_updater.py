@@ -35,7 +35,7 @@ except ImportError:
 # ── Paths ─────────────────────────────────────────────────────────────────────
 SCRIPT_DIR    = Path(__file__).parent
 HTML_FILES    = [
-    SCRIPT_DIR / 'WorldCupDashboard-A.html',
+    SCRIPT_DIR / 'WorldCupDashboard.html',
 ]
 LOG_FILE      = SCRIPT_DIR / 'wc_updater.log'
 RESULTS_JSON  = SCRIPT_DIR / 'wc_results.json'
@@ -306,10 +306,12 @@ def normalise(api_name):
 def compute_results(fixtures):
     """
     Walk all completed fixtures to determine each team's furthest stage reached.
-    Uses football-data.org match format (stage: GROUP_STAGE, ROUND_OF_32, etc.)
+    Returns (results_dict, match_scores_dict).
+    match_scores: {(home, away): (hg, ag)} for all FINISHED matches.
     """
     gf = {t: 0 for t in ALL_TEAMS}
     ga = {t: 0 for t in ALL_TEAMS}
+    match_scores = {}  # (home, away) -> (hg, ag)
 
     ko_participants = {}   # stage_key → set of teams
     ko_losers = {}         # stage_key → set of teams
@@ -334,6 +336,9 @@ def compute_results(fixtures):
         ag     = f['score']['fullTime'].get('away') or 0
 
         is_finished = status == 'FINISHED'
+
+        if is_finished and home in ALL_TEAMS and away in ALL_TEAMS:
+            match_scores[(home, away)] = (hg, ag)
 
         if stage == 'GROUP_STAGE':
             if is_finished:
@@ -390,7 +395,7 @@ def compute_results(fixtures):
 
         results[team] = {'stage': stage, 'gf': gf[team], 'ga': ga[team]}
 
-    return results
+    return results, match_scores
 
 # ── Banter generation ─────────────────────────────────────────────────────────
 def build_banter_feed(results):
@@ -459,6 +464,35 @@ def _js_str(s):
     """Escape a string for inclusion in a single-quoted JS string literal."""
     return s.replace('\\', '\\\\').replace("'", "\\'")
 
+def patch_fixture_scores(content, match_scores):
+    """
+    For each completed match, update or insert hg/ag into the FIXTURES entry.
+    match_scores: dict keyed by (home, away) -> (hg, ag)
+    Handles both existing hg/ag and fresh entries.
+    """
+    if not match_scores:
+        return content, False
+
+    changed = False
+    for (home, away), (hg, ag) in match_scores.items():
+        # Match the fixture line — with or without existing hg/ag
+        # Pattern: {group:'X',home:'HOME',away:'AWAY',d:'DATE',t:'TIME'[,hg:N,ag:N]},
+        base = re.escape(home)
+        opp  = re.escape(away)
+        pattern = (
+            r"(\{group:'[^']+',home:'" + base + r"',away:'" + opp +
+            r"',d:'[^']+',t:'[^']+')" +
+            r"(?:,hg:\d+,ag:\d+)?" +
+            r"(\})"
+        )
+        replacement = rf'\g<1>,hg:{hg},ag:{ag}\g<2>'
+        new_content, n = re.subn(pattern, replacement, content, count=1)
+        if n:
+            content = new_content
+            changed = True
+
+    return content, changed
+
 def patch_results_data(content, results):
     """Replace const RESULTS_DATA = {...}; in the HTML."""
     lines = ['const RESULTS_DATA = {']
@@ -497,14 +531,15 @@ def patch_last_updated(content, ts):
         return content, False
     return new_content, True
 
-def patch_html_file(filepath, results, feed, ts):
+def patch_html_file(filepath, results, feed, ts, match_scores=None):
     path    = Path(filepath)
     content = path.read_text(encoding='utf-8')
     changed = False
 
-    content, ok = patch_results_data(content, results); changed = changed or ok
-    content, ok = patch_banter_feed(content, feed);     changed = changed or ok
-    content, ok = patch_last_updated(content, ts);      changed = changed or ok
+    content, ok = patch_results_data(content, results);              changed = changed or ok
+    content, ok = patch_fixture_scores(content, match_scores or {}); changed = changed or ok
+    content, ok = patch_banter_feed(content, feed);                  changed = changed or ok
+    content, ok = patch_last_updated(content, ts);                   changed = changed or ok
 
     if changed:
         path.write_text(content, encoding='utf-8')
@@ -640,6 +675,7 @@ def main():
             sys.exit(1)
 
     # ── Fetch or use demo data ───────────────────────────────────────────────
+    match_scores = {}
     if args.force_demo:
         log.info('Using demo data (--force-demo)')
         results = _demo_results()
@@ -650,8 +686,8 @@ def main():
         except Exception as e:
             log.error('API fetch failed: %s', e)
             sys.exit(1)
-        results = compute_results(fixtures)
-        log.info('Computed results for %d teams', len(results))
+        results, match_scores = compute_results(fixtures)
+        log.info('Computed results for %d teams, %d match scores', len(results), len(match_scores))
 
     # ── Save debug JSON ──────────────────────────────────────────────────────
     RESULTS_JSON.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding='utf-8')
@@ -671,7 +707,7 @@ def main():
     patched = 0
     for f in HTML_FILES:
         if f.exists():
-            if patch_html_file(f, results, feed, ts):
+            if patch_html_file(f, results, feed, ts, match_scores):
                 patched += 1
         else:
             log.warning('Not found: %s', f)
