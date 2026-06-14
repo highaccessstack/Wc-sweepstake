@@ -746,7 +746,6 @@ function renderCards(lb,order,started){
         ${teamData.map(t=>`<div class="team-row">
           <span class="team-name">${t.name}</span>
           <span class="team-badges">
-            <span class="group-badge">${TEAM_GROUPS[t.name]||'?'}</span>
             ${started&&t.played?`<span class="fifa-pts-badge">${t.pts}pt${t.pts!==1?'s':''}</span>`:''}
             ${started&&t.played?`<span class="goals-badge">${t.gf}\u2013${t.ga}</span>`:''}
           </span>
