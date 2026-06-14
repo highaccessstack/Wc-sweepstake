@@ -919,13 +919,11 @@ function generateContextualSledge(homeTeam,awayTeam){
   return homeTeam+' vs '+awayTeam+'. One side walks away disappointed. Classic football.';
 }
 
-function woodenSpoonRoast(name,score,gf){
-  const g=gf!==1?'s':'';
+function woodenSpoonRoast(name,score){
   return _pick([
-    '🥄 '+name+' is tracking like a busted plugger — '+score+' points and '+gf+' goal'+g+' from the entire squad. Total shocker.',
-    '📉 '+name+' is flat out like a lizard drinking at the bottom of the table. '+score+' points. Doing absolutely zero work.',
-    '🦘 Kangaroos loose in the top paddock alert: '+name+' is on '+score+' points and wondering where it all went wrong.',
-    '🥄 '+name+' is the proud custodian of the wooden spoon on '+score+' pts. The word competitive is being used very loosely.',
+    '\uD83E\uDE74 BLOWOUT: '+name+' has had an absolute blowout in their double-pluggers with a miserable score of '+score+'.',
+    '\uD83D\uDCC9 LADDER ANCHOR: '+name+' is sitting in dead last place. Flat out like a lizard drinking, doing absolutely zero work on the scoreboard.',
+    '\uD83E\uDD98 TOP PADDOCK ALERT: With a score of '+score+', '+name+' clearly has some absolute kangaroos loose in the top paddock.',
   ]);
 }
 
@@ -949,7 +947,7 @@ function buildLiveBanter(lb){
 
   // 1. Wooden spoon roast — always leads
   const last=lb[lb.length-1];
-  if(last)lines.push(woodenSpoonRoast(last.name,last.score,last.gf));
+  if(last)lines.push(woodenSpoonRoast(last.name,last.score));
 
   // 2. Leader taunt if there is a clear gap
   const leader=lb[0];
