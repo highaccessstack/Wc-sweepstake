@@ -69,12 +69,12 @@ STAGES = [
 ]
 STAGE_POINTS = {
     'Group stage exit':   0,
-    'Round of 32':        2,
-    'Round of 16':        4,
-    'Quarterfinals':      6,
-    'Semifinals':        10,
-    'Final (runner-up)': 15,
-    'Champion':          25,
+    'Round of 32':        5,
+    'Round of 16':        9,
+    'Quarterfinals':     17,
+    'Semifinals':        29,
+    'Final (runner-up)': 44,
+    'Champion':          54,
 }
 
 # football-data.org stage → stage label assigned to the LOSER
