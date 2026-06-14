@@ -36,8 +36,6 @@ except ImportError:
 SCRIPT_DIR    = Path(__file__).parent
 HTML_FILES    = [
     SCRIPT_DIR / 'WorldCupDashboard-A.html',
-    SCRIPT_DIR / 'WorldCupDashboard-B.html',
-    SCRIPT_DIR / 'WorldCupDashboard-C.html',
 ]
 LOG_FILE      = SCRIPT_DIR / 'wc_updater.log'
 RESULTS_JSON  = SCRIPT_DIR / 'wc_results.json'
