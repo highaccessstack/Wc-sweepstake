@@ -788,12 +788,6 @@ function renderAll(){
 
 
 
-    <section class="section reveal" id="fix-sec">
-      <div class="sec-label">Schedule</div>
-      <h2 class="sec-title">Fixtures</h2>
-      ${renderFixtures(todayStr())}
-    </section>
-
     <section class="section reveal" id="banter-sec">
       <div class="sec-label"><span class="bt-pulse-dot"></span>Live Commentary</div>
       <h2 class="sec-title">Clippy's Banter</h2>
@@ -812,12 +806,6 @@ function renderAll(){
       <div id="h2h-match-grid"></div>
     </section>
 
-    <section class="section">
-      <div class="sec-label">All Matches</div>
-      <h2 class="sec-title">Schedule</h2>
-      <div id="sched-sec">${renderFixtureSchedule()}</div>
-    </section>
-
     <section class="section reveal">
       <div class="sec-label">Analysis</div>
       <h2 class="sec-title">Insights</h2>
@@ -833,6 +821,18 @@ function renderAll(){
         <button class="shuffle-btn" id="shuf">&#9654; Shuffle</button>
       </div>
       <div class="cards-grid" id="cgrid">${renderCards(lb,order,started)}</div>
+    </section>
+
+    <section class="section reveal" id="fix-sec">
+      <div class="sec-label">Schedule</div>
+      <h2 class="sec-title">Fixtures</h2>
+      ${renderFixtures(todayStr())}
+    </section>
+
+    <section class="section">
+      <div class="sec-label">All Matches</div>
+      <h2 class="sec-title">Schedule</h2>
+      <div id="sched-sec">${renderFixtureSchedule()}</div>
     </section>
 
     <footer class="footer">
