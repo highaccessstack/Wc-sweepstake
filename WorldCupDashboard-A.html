@@ -529,29 +529,45 @@ function renderCountdown(){
 }
 
 function renderFixtures(today){
-  let day=today;
-  let todayFix=FIXTURES.filter(f=>f.d===day);
+  const tomorrow=new Date(today+'T00:00:00');
+  tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr=`${tomorrow.getFullYear()}-${p2(tomorrow.getMonth()+1)}-${p2(tomorrow.getDate())}`;
+
+  let todayFix=FIXTURES.filter(f=>f.d===today);
+  let tomorrowFix=FIXTURES.filter(f=>f.d===tomorrowStr);
+
+  // If no matches today, find next day with matches and show that + the day after
   if(!todayFix.length){
     const upcoming=FIXTURES.filter(f=>f.d>=today).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
     if(!upcoming.length)return`<div class="fix-empty">No upcoming fixtures.</div>`;
-    day=upcoming[0].d;
-    todayFix=FIXTURES.filter(f=>f.d===day);
+    const nextDay=upcoming[0].d;
+    todayFix=FIXTURES.filter(f=>f.d===nextDay);
+    const afterNext=upcoming.find(f=>f.d>nextDay);
+    tomorrowFix=afterNext?FIXTURES.filter(f=>f.d===afterNext.d):[];
   }
-  const dayLabel=day===today?'Today':'Next: '+day;
-  const cards=todayFix.map(f=>{
-    const ho=TEAM_OWNER[f.home],ao=TEAM_OWNER[f.away];
-    const hStyle=ho?` style="color:var(--neon)"`:''
-    const aStyle=ao?` style="color:var(--neon)"`:''
-    return`<div class="fix-card">
-      <div class="fix-group">Group ${f.group}</div>
-      <div class="fix-teams"><span class="own"${hStyle}>${f.home}</span> <span style="color:var(--muted)">vs</span> <span class="own"${aStyle}>${f.away}</span></div>
-      <div class="fix-time">${f.t} HKT &middot; ${f.d}</div>
-    </div>`;
-  }).join('');
-  return`<p style="font-size:13px;color:var(--muted);margin-bottom:12px">${dayLabel} &mdash; ${todayFix.length} match${todayFix.length>1?'es':''}</p>
-  <div class="fix-scroll-wrap">
+
+  function makeCards(fixes,label){
+    if(!fixes.length)return'';
+    const cards=fixes.map(f=>{
+      const ho=TEAM_OWNER[f.home],ao=TEAM_OWNER[f.away];
+      const hStyle=ho?` style="color:var(--neon)"`:''
+      const aStyle=ao?` style="color:var(--neon)"`:''
+      return`<div class="fix-card">
+        <div class="fix-group">Group ${f.group}</div>
+        <div class="fix-teams"><span class="own"${hStyle}>${f.home}</span> <span style="color:var(--muted)">vs</span> <span class="own"${aStyle}>${f.away}</span></div>
+        <div class="fix-time">${f.t} HKT &middot; ${f.d}</div>
+      </div>`;
+    }).join('');
+    return`<p style="font-size:13px;color:var(--muted);margin:12px 0 8px">${label} &mdash; ${fixes.length} match${fixes.length>1?'es':''}</p>${cards}`;
+  }
+
+  const todayLabel=todayFix.length&&todayFix[0].d===today?'Today':'Next: '+todayFix[0]?.d;
+  const tomorrowLabel=tomorrowFix.length?(todayFix[0]?.d===today?'Tomorrow':'Then: '+tomorrowFix[0].d):'';
+  const allCards=makeCards(todayFix,todayLabel)+(tomorrowFix.length?makeCards(tomorrowFix,tomorrowLabel):'');
+
+  return`<div class="fix-scroll-wrap">
     <button class="fix-arrow fix-arrow-l" onclick="document.getElementById('ftk').scrollBy({left:-260,behavior:'smooth'})" aria-label="Scroll left">&#8249;</button>
-    <div class="fix-track" id="ftk">${cards}</div>
+    <div class="fix-track" id="ftk">${allCards}</div>
     <button class="fix-arrow fix-arrow-r" onclick="document.getElementById('ftk').scrollBy({left:260,behavior:'smooth'})" aria-label="Scroll right">&#8250;</button>
   </div>`;
 }
