@@ -96,30 +96,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .fix-time{font-size:12px;color:var(--muted);margin-top:6px}
 .fix-empty{padding:24px;color:var(--muted);font-size:14px;font-style:italic}
 
-/* ── Podium ── */
-.podium-stage{perspective:800px;display:flex;align-items:flex-end;justify-content:center;gap:0;
-  padding:40px 0 20px}
-.podium-block{transform:rotateX(8deg) translateZ(0);transform-origin:bottom center;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  padding:20px 24px 24px;min-width:160px;border-radius:var(--r) var(--r) 0 0;
-  transition:transform .4s ease,box-shadow .4s ease;cursor:default}
-.podium-block:hover{transform:rotateX(4deg) translateZ(20px)}
-.podium-1{background:linear-gradient(180deg,rgba(255,215,0,.18) 0%,rgba(255,215,0,.06) 100%);
-  border:1px solid rgba(255,215,0,0.35);height:220px;order:2;
-  box-shadow:0 0 60px rgba(255,215,0,0.2),inset 0 1px 0 rgba(255,215,0,0.3)}
-.podium-2{background:linear-gradient(180deg,rgba(192,192,192,.14) 0%,rgba(192,192,192,.04) 100%);
-  border:1px solid rgba(192,192,192,0.25);height:160px;order:1}
-.podium-3{background:linear-gradient(180deg,rgba(205,127,50,.12) 0%,rgba(205,127,50,.04) 100%);
-  border:1px solid rgba(205,127,50,0.22);height:130px;order:3}
-.pod-medal{font-size:28px;margin-bottom:8px}
-.pod-name{font-size:15px;font-weight:700;text-align:center;max-width:140px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pod-score{font-size:28px;font-weight:900;color:var(--neon);
-  text-shadow:0 0 20px var(--neon-glow)}
-.pod-score.counting{animation:countPop .1s ease}
-@keyframes countPop{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.pod-hidden{text-align:center;padding:40px;color:var(--muted);font-size:14px;font-style:italic}
-
 /* ── Leaderboard ── */
 .lb-row{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:8px;
   border-radius:var(--r-sm);transition:border-color .2s,box-shadow .2s}
@@ -634,23 +610,6 @@ function renderFixtures(today){
   </div>`;
 }
 
-function renderPodium(lb,started){
-  if(!started)return`<div class="pod-hidden glass">Podium reveals once the tournament begins.</div>`;
-  const top=lb.slice(0,3);
-  const order=[1,0,2];// 2nd, 1st, 3rd display order
-  const medals=['\u{1F948}','\u{1F947}','\u{1F949}'];
-  return`<div class="podium-stage">
-    ${order.map(i=>{
-      const e=top[i];if(!e)return'';
-      return`<div class="podium-block podium-${i+1}">
-        <div class="pod-medal">${medals[i]}</div>
-        <div class="pod-name">${e.name}</div>
-        <div class="pod-score" data-target="${e.score}">0</div>
-      </div>`;
-    }).join('')}
-  </div>`;
-}
-
 function renderLeaderboard(lb,started){
   if(!started)return`<div class="lb-hidden">Standings activate once the tournament begins.</div>`;
   const maxScore=Math.max(...lb.map(e=>e.score),1);
@@ -749,10 +708,10 @@ function renderAll(){
       </div>
     </section>
 
-    <section class="section reveal">
-      <div class="sec-label">Top 3</div>
-      <h2 class="sec-title">Podium</h2>
-      ${renderPodium(lb,started)}
+    <section class="section reveal" id="h2h-sec">
+      <div class="sec-label">Head to Head</div>
+      <h2 class="sec-title">Office Duels</h2>
+      <div id="h2h-match-grid"></div>
     </section>
 
     <section class="section">
@@ -765,12 +724,6 @@ function renderAll(){
       <div class="sec-label">Analysis</div>
       <h2 class="sec-title">Insights</h2>
       ${renderInsights(insights,started)}
-    </section>
-
-    <section class="section reveal" id="h2h-sec">
-      <div class="sec-label">Head to Head</div>
-      <h2 class="sec-title">Office Duels</h2>
-      <div id="h2h-match-grid"></div>
     </section>
 
     <section class="section">
