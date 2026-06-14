@@ -1026,12 +1026,16 @@ function buildLiveBanter(lb){
       'You beauty \u2014 '+leader.name+' is '+gap+' point'+gapStr+' ahead and living their best life. '+lb[1].name+' reckon they can catch up? Iffy at best.',
     ]));
   }else if(leader&&leader.score===0){
-    const _byGoals=[...lb].sort((a,b)=>b.gf-a.gf);
-    const _topG=_byGoals[0];
-    if(_topG&&_topG.gf>0){
-      const _g=_topG.gf;
-      lines.push('📊 Group stage: points locked at zero for all, but '+_topG.name+' leads on goals \u2014 '+_g+' goal'+(_g!==1?'s':'')+' in the bag. Tiebreaker territory already.');
+    const _byFifa=lb.map(p=>({name:p.name,pts:p.teams.reduce((s,t)=>s+getTeamFifaPts(t),0),gf:p.gf}))
+      .sort((a,b)=>b.pts!==a.pts?b.pts-a.pts:b.gf-a.gf);
+    const _top=_byFifa[0];
+    if(_top&&_top.pts>0){
+      const _gap=_top.pts-(_byFifa[1]?.pts||0);
+      const _gapStr=_gap>0?' \u2014 '+_gap+' point'+(_gap!==1?'s':'')+' clear':'';
+      lines.push('📊 Group stage early doors: '+_top.name+' leads on '+_top.pts+' FIFA pt'+(_top.pts!==1?'s':'')+_gapStr+'. Everyone else is watching and waiting.');
     }else{
+      lines.push('📊 Everyone is still on 0 points. The panic will arrive shortly.');
+    }
       lines.push('📊 Everyone is still on 0 points. The panic will arrive shortly.');
     }
   }
