@@ -905,7 +905,10 @@ function generateContextualSledge(homeTeam,awayTeam){
     return _pick([
       opp+' better pull their head in. Australia is out here sliding flat out like a lizard drinking and has zero regrets.',
       'Fair dinkum: if '+opp+' thinks they are walking away with points, they have got kangaroos loose in the top paddock.',
-      'Australia is treating this like the post-match coldie is at stake. '+opp+' has been warned.',
+      'Australia is treating this like the post-match coldie at the Bottle-O is at stake. '+opp+' has been warned.',
+      'Crikey, '+opp+' is in trouble. Australia is true blue and defo not here for a smoko and a sanger.',
+      "G'day "+opp+". Australia is bloody rapt to be here and will give you a heaps good hiding. No wuckas.',
+      opp+" reckon they can handle this? She'll be apples said no one watching Australia play. Ever.',
     ]);
   }
   if(homeTeam==='New Zealand'||awayTeam==='New Zealand'){
@@ -921,9 +924,12 @@ function generateContextualSledge(homeTeam,awayTeam){
 
 function woodenSpoonRoast(name,score){
   return _pick([
-    '\uD83E\uDE74 BLOWOUT: '+name+' has had an absolute blowout in their double-pluggers with a miserable score of '+score+'.',
-    '\uD83D\uDCC9 LADDER ANCHOR: '+name+' is sitting in dead last place. Flat out like a lizard drinking, doing absolutely zero work on the scoreboard.',
-    '\uD83E\uDD98 TOP PADDOCK ALERT: With a score of '+score+', '+name+' clearly has some absolute kangaroos loose in the top paddock.',
+    '\uD83E\uDE74 BLOWOUT: '+name+' has had an absolute blowout in their double-pluggers with a miserable score of '+score+'. Defo cactus.',
+    '\uD83D\uDCC9 LADDER ANCHOR: '+name+' is sitting in dead last. Flat out like a lizard drinking, doing absolutely zero work on the scoreboard.',
+    '\uD83E\uDD98 TOP PADDOCK ALERT: With '+score+' points, '+name+' clearly has some absolute kangaroos loose in the top paddock. Crikey.',
+    '\uD83E\uDDDF BLUDGER WATCH: '+name+" is the definition of a bludger \u2014 "+score+" points and Buckley's chance of catching the pack.',
+    '\u{1F480} CACTUS: '+name+"'s squad is rooted, buggered, and going absolutely nowhere. "+score+" points. She will not be apples.',
+    '\uD83D\uDE2E STREWTH: Strewth, '+name+' is devo. '+score+" points and not a snag's chance of a comeback at smoko.',
   ]);
 }
 
@@ -954,7 +960,11 @@ function buildLiveBanter(lb){
   if(leader&&leader.score>0&&lb.length>=2&&leader.score>lb[1].score){
     const gap=leader.score-lb[1].score;
     const gapStr=gap!==1?'s':'';
-    lines.push('🥇 '+leader.name+' leads by '+gap+' point'+gapStr+' and is absolutely insufferable about it. '+lb[1].name+' is working on it.');
+    lines.push(_pick([
+      '🥇 '+leader.name+' leads by '+gap+' point'+gapStr+' and is bloody stoked about it. '+lb[1].name+' is cracking the shits.',
+      'Deadset, '+leader.name+' is '+gap+' point'+gapStr+' clear and rapt. '+lb[1].name+' is not having a ripper arvo.',
+      'You beauty \u2014 '+leader.name+' is '+gap+' point'+gapStr+' ahead and living their best life. '+lb[1].name+' reckon they can catch up? Iffy at best.',
+    ]));
   }else if(leader&&leader.score===0){
     lines.push('📊 Everyone is still on 0 points. The panic will arrive shortly.');
   }
