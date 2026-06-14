@@ -19,7 +19,7 @@ jobs:
 
       - name: Fetch results and patch dashboards
         env:
-          FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
+          FOOTBALL_DATA_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python wc_updater.py
 
       - name: Commit updated dashboards
