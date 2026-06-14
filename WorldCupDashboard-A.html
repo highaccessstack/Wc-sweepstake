@@ -186,6 +186,22 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
   .podium-block{transition:none}
 }
 
+/* ── Banter Feed ── */
+.banter-wrap{padding:36px 40px 28px;position:relative;border-left:3px solid var(--neon);
+  min-height:130px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.bt-open-quote{position:absolute;top:8px;left:18px;font-size:80px;line-height:1;
+  color:var(--neon);opacity:0.15;font-family:Georgia,serif;pointer-events:none;user-select:none}
+.bt-text{font-size:20px;font-style:italic;font-weight:500;color:var(--text);line-height:1.55;
+  transition:opacity .35s ease;min-height:2.5em;padding-left:16px;z-index:1}
+.bt-footer{display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-left:16px}
+.bt-dots{display:flex;gap:7px}
+.bt-dot{width:7px;height:7px;border-radius:50%;background:var(--subtle);cursor:pointer;
+  transition:background .2s,transform .2s;border:none;padding:0;outline:none}
+.bt-dot.active{background:var(--neon);transform:scale(1.5)}
+.bt-count{font-size:11px;color:var(--muted);letter-spacing:1px}
+.bt-pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--neon);
+  margin-right:6px;animation:pulse 1.2s ease-in-out infinite;vertical-align:middle}
+
 /* ── Office Duels ── */
 #h2h-match-grid{
   display:grid;
@@ -718,6 +734,19 @@ function renderAll(){
       ${renderFixtures(todayStr())}
     </section>
 
+    <section class="section reveal" id="banter-sec">
+      <div class="sec-label"><span class="bt-pulse-dot"></span>Live Commentary</div>
+      <h2 class="sec-title">Banter Feed</h2>
+      <div class="glass banter-wrap">
+        <div class="bt-open-quote">"</div>
+        <div id="banter-text" class="bt-text"></div>
+        <div class="bt-footer">
+          <div id="banter-dots" class="bt-dots"></div>
+          <span id="banter-count" class="bt-count"></span>
+        </div>
+      </div>
+    </section>
+
     <section class="section reveal">
       <div class="sec-label">Top 3</div>
       <h2 class="sec-title">Podium</h2>
@@ -753,7 +782,7 @@ function renderAll(){
       <div class="cards-grid" id="cgrid">${renderCards(lb,order,started)}</div>
     </section>
 
-    <footer class="footer"><div id="banter-msg" style="font-style:italic;opacity:.85;margin-bottom:4px;min-height:1.2em;">${BANTER_FEED[0]||''}</div><small style="opacity:.55;font-size:.78em;">&#8635; ${LAST_UPDATED||'-'} &middot; All times HKT (UTC+8)</small></footer>
+    <footer class="footer"><small style="opacity:.55;font-size:.78em;">&#8635; ${LAST_UPDATED||'-'} &middot; All times HKT (UTC+8)</small></footer>
   </div>`;
 
   // Shuffle
@@ -772,6 +801,7 @@ function renderAll(){
   // Scroll reveal + counters
   initReveal();
   initCounters();
+  initBanterTicker(buildLiveBanter(lb));
   initWorkplaceMatchups();
 }
 
@@ -827,6 +857,92 @@ function initReveal(){
     document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
   }
 }
+
+let _banterLines=[];
+let _banterIdx=0;
+
+function buildLiveBanter(lb){
+  const lines=[];
+  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
+  const countryToOwner={};
+  PARTICIPANTS.forEach(u=>{u.teams.forEach(t=>{countryToOwner[t]=u.name;});});
+  const todayIso=new Date().toISOString().slice(0,10);
+
+  if(!started){
+    return[...BANTER_FEED,
+      'The tournament is about to begin. Set your expectations accordingly.',
+      '12 players. 48 teams. One champion. The maths is brutal for most of you.',
+      'Someone in this group picked Paraguay. That person knows who they are.',
+    ];
+  }
+
+  const leader=lb[0];
+  if(leader){
+    if(leader.score>0)lines.push(`🥇 ${leader.name} leads on ${leader.score} pts and is absolutely insufferable about it.`);
+    else lines.push(`📊 Everyone is still on 0 points. Panic is, as yet, premature.`);
+  }
+
+  const last=lb[lb.length-1];
+  if(last&&last.name!==leader?.name){
+    lines.push(last.score===0
+      ?`⚠️ ${last.name} is propping up the table on 0 points. Their teams have managed ${last.gf} goal${last.gf!==1?'s':''} between them.`
+      :`⚠️ ${last.name} is at the bottom on ${last.score} pts. Room to grow. Probably.`);
+  }
+
+  lb.forEach(e=>{
+    if(e.active===4)lines.push(`💪 ${e.name} still has all 4 teams alive. A genuine threat.`);
+    if(e.active===0)lines.push(`☠️ ${e.name}'s entire squad has been eliminated. They are officially in the wait-until-2030 phase.`);
+  });
+
+  if(lb.length>=2&&lb[0].score>lb[1].score){
+    const gap=lb[0].score-lb[1].score;
+    lines.push(`📐 ${lb[0].name} leads ${lb[1].name} by ${gap} point${gap!==1?'s':''}. Comfortable or terrifying depending on which side you're on.`);
+  }
+
+  const topGf=[...lb].sort((a,b)=>b.gf-a.gf)[0];
+  if(topGf&&topGf.gf>0)lines.push(`⚽ ${topGf.name}'s teams have scored the most goals — ${topGf.gf} total. Momentum is a thing.`);
+
+  const upcomingDuels=FIXTURES.filter(fix=>{
+    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
+    return ho&&ao&&ho!==ao&&fix.d>=todayIso;
+  }).slice(0,2);
+  upcomingDuels.forEach(fix=>{
+    const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
+    lines.push(`🔥 UPCOMING OFFICE CLASH: ${ho}'s ${fix.home} faces ${ao}'s ${fix.away} on ${fix.d}. Someone is walking away disappointed.`);
+  });
+
+  Object.entries(RESULTS_DATA).filter(([,d])=>d.gf>=2).sort((a,b)=>b[1].gf-a[1].gf).slice(0,2).forEach(([team,d])=>{
+    const owner=countryToOwner[team];
+    if(owner)lines.push(`⚽ ${team} have scored ${d.gf} goals — ${owner} is cautiously optimistic.`);
+  });
+
+  lines.push(...BANTER_FEED);
+  return lines.filter(Boolean);
+}
+
+function initBanterTicker(lines){
+  _banterLines=lines.length?lines:['No banter yet. Check back after kickoff.'];
+  _banterIdx=0;
+  _renderBanterSlide(0);
+}
+
+function _renderBanterSlide(idx){
+  const el=document.getElementById('banter-text');
+  const dotsEl=document.getElementById('banter-dots');
+  const countEl=document.getElementById('banter-count');
+  if(!el)return;
+  el.style.opacity='0';
+  setTimeout(()=>{
+    el.textContent=_banterLines[idx]||'';
+    el.style.opacity='1';
+  },300);
+  if(dotsEl)dotsEl.innerHTML=_banterLines.map((_,i)=>
+    `<button class="bt-dot${i===idx?' active':''}" onclick="banterGoTo(${i})" aria-label="Banter ${i+1}"></button>`
+  ).join('');
+  if(countEl)countEl.textContent=`${idx+1} / ${_banterLines.length}`;
+}
+
+function banterGoTo(idx){_banterIdx=idx;_renderBanterSlide(idx);}
 
 function initWorkplaceMatchups(){
   if(typeof PARTICIPANTS==='undefined'||typeof FIXTURES==='undefined'||typeof RESULTS_DATA==='undefined'){
@@ -916,17 +1032,12 @@ setInterval(()=>{
   }
 },1000);
 
-/* banter ticker: rotate every 13 seconds without triggering renderAll */
-(function(){
-  let _bi=0;
-  setInterval(function(){
-    const el=document.getElementById('banter-msg');
-    if(el&&BANTER_FEED.length){
-      _bi=(_bi+1)%BANTER_FEED.length;
-      el.textContent=BANTER_FEED[_bi];
-    }
-  },13000);
-})();
+/* banter ticker: auto-advance every 7 seconds */
+setInterval(function(){
+  if(!_banterLines.length)return;
+  _banterIdx=(_banterIdx+1)%_banterLines.length;
+  _renderBanterSlide(_banterIdx);
+},7000);
 </script>
 </body>
 </html>
