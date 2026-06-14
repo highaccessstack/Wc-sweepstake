@@ -462,7 +462,10 @@ def build_banter_feed(results):
 # ── HTML patching ─────────────────────────────────────────────────────────────
 def _js_str(s):
     """Escape a string for inclusion in a single-quoted JS string literal."""
-    return s.replace('\\', '\\\\').replace("'", "\\'")
+    return (s.replace('\\', '\\\\')
+             .replace('\u2019', '\\u2019')   # curly right quote → literal JS escape
+             .replace('\u2018', '\\u2018')   # curly left quote → literal JS escape
+             .replace("'", "\\'"))
 
 def patch_fixture_scores(content, match_scores):
     """
