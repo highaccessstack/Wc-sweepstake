@@ -185,6 +185,49 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
   .cd-pulse::before{animation:none}
   .podium-block{transition:none}
 }
+
+/* ── Office Duels ── */
+#h2h-match-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+  margin-top:15px;
+}
+.h2h-card{
+  background:#1a1a2e;
+  border:1px solid #16213e;
+  border-radius:10px;
+  padding:16px;
+  position:relative;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.h2h-card:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.35)}
+.h2h-card.workplace-duel{border:1px solid #ff4757;background:#251c2d}
+.duel-badge{
+  position:absolute;top:-9px;right:12px;
+  background:#ff4757;color:#fff;font-size:9px;font-weight:700;
+  padding:2px 8px;border-radius:8px;letter-spacing:.05em;
+}
+.h2h-meta{
+  display:flex;justify-content:space-between;
+  font-size:11px;color:var(--muted);
+  border-bottom:1px solid #16213e;
+  padding-bottom:6px;margin-bottom:12px;
+}
+.h2h-card.workplace-duel .h2h-meta{border-color:#38253a}
+.h2h-teams-block{display:flex;align-items:center;gap:8px}
+.h2h-competitor{flex:1}
+.coworker-identity{font-size:14px;font-weight:700;color:var(--text)}
+.nation-identity{font-size:12px;color:var(--muted);margin-top:2px}
+.h2h-divider{
+  text-align:center;color:#4ecca3;font-weight:700;
+  font-size:11px;flex-shrink:0;padding:0 4px;
+}
+.status-indicator{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+.status-indicator.upcoming{background:#16213e;color:#4ecca3}
+.status-indicator.today{background:rgba(0,229,160,.15);color:var(--neon)}
+.status-indicator.finished{background:#2d3748;color:var(--muted);text-decoration:line-through}
+.h2h-empty{padding:24px;color:var(--muted);font-size:14px;font-style:italic}
 </style>
 </head>
 <body>
@@ -693,6 +736,12 @@ function renderAll(){
       ${renderInsights(insights,started)}
     </section>
 
+    <section class="section reveal" id="h2h-sec">
+      <div class="sec-label">Head to Head</div>
+      <h2 class="sec-title">Office Duels</h2>
+      <div id="h2h-match-grid"></div>
+    </section>
+
     <section class="section">
       <div class="cards-hdr">
         <div>
@@ -723,6 +772,7 @@ function renderAll(){
   // Scroll reveal + counters
   initReveal();
   initCounters();
+  initWorkplaceMatchups();
 }
 
 function updateProgress(){
@@ -776,6 +826,68 @@ function initReveal(){
   } else {
     document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
   }
+}
+
+function initWorkplaceMatchups(){
+  if(typeof PARTICIPANTS==='undefined'||typeof FIXTURES==='undefined'||typeof RESULTS_DATA==='undefined'){
+    console.error('Office Duels: required globals missing');return;
+  }
+  const countryToOwner={};
+  PARTICIPANTS.forEach(u=>{u.assignedTeams.forEach(t=>{countryToOwner[t]=u.userId;});});
+
+  const todayMidnight=new Date();todayMidnight.setHours(0,0,0,0);
+
+  const duels=FIXTURES.reduce((acc,fix)=>{
+    const homeOwner=countryToOwner[fix.home];
+    const awayOwner=countryToOwner[fix.away];
+    if(!homeOwner||!awayOwner||homeOwner===awayOwner)return acc;
+
+    const homeStage=(RESULTS_DATA[fix.home]&&RESULTS_DATA[fix.home].stage)||'Group stage';
+    const awayStage=(RESULTS_DATA[fix.away]&&RESULTS_DATA[fix.away].stage)||'Group stage';
+
+    const matchDate=new Date(fix.d);
+    let derivedStatus;
+    if(matchDate<todayMidnight)derivedStatus='finished';
+    else if(matchDate.toDateString()===todayMidnight.toDateString())derivedStatus='today';
+    else derivedStatus='upcoming';
+
+    acc.push({home:fix.home,away:fix.away,d:fix.d,t:fix.t,group:fix.group,
+      homeOwner,awayOwner,homeStage,awayStage,derivedStatus});
+    return acc;
+  },[]);
+
+  renderWorkplaceMatchupCards(duels);
+}
+
+function renderWorkplaceMatchupCards(duels){
+  const grid=document.getElementById('h2h-match-grid');
+  if(!grid)return;
+  if(!duels.length){
+    grid.innerHTML='<p class="h2h-empty">No direct colleague matchups found.</p>';return;
+  }
+  grid.innerHTML=duels.map(m=>{
+    const isHot=m.derivedStatus!=='finished';
+    const badge=isHot?'<span class="duel-badge">🔥 OFFICE DUEL</span>':'';
+    const statusLabel=m.derivedStatus==='today'?'TODAY':m.derivedStatus.toUpperCase();
+    return `<div class="h2h-card${isHot?' workplace-duel':''}">
+      ${badge}
+      <div class="h2h-meta">
+        <span>Group ${m.group} &middot; ${m.d} ${m.t} HKT</span>
+        <span class="status-indicator ${m.derivedStatus}">${statusLabel}</span>
+      </div>
+      <div class="h2h-teams-block">
+        <div class="h2h-competitor">
+          <div class="coworker-identity">${m.homeOwner}</div>
+          <div class="nation-identity">🏠 ${m.home} &middot; ${m.homeStage}</div>
+        </div>
+        <div class="h2h-divider">VS</div>
+        <div class="h2h-competitor">
+          <div class="coworker-identity">${m.awayOwner}</div>
+          <div class="nation-identity">✈️ ${m.away} &middot; ${m.awayStage}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 renderAll();
