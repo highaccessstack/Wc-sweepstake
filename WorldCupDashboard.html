@@ -1192,6 +1192,11 @@ setInterval(function(){
   _banterIdx=(_banterIdx+1)%_banterLines.length;
   _renderBanterSlide(_banterIdx);
 },7000);
+
+/* banter refresh: rebuild from live data every 5 minutes */
+setInterval(function(){
+  initBanterTicker(buildLiveBanter(buildLeaderboard()));
+},300000);
 </script>
 </body>
 </html>
