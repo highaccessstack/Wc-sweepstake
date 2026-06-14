@@ -96,23 +96,46 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .fix-time{font-size:12px;color:var(--muted);margin-top:6px}
 .fix-empty{padding:24px;color:var(--muted);font-size:14px;font-style:italic}
 
-/* ── Leaderboard ── */
-.lb-row{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:8px;
-  border-radius:var(--r-sm);transition:border-color .2s,box-shadow .2s}
-.lb-row.rank-1{border-color:rgba(255,215,0,0.5)!important;
-  box-shadow:0 0 30px rgba(255,215,0,0.1),inset 0 0 30px rgba(255,215,0,0.04)}
-.lb-rank{font-size:28px;font-weight:900;width:40px;text-align:right;flex-shrink:0;color:var(--subtle)}
-.lb-rank.r1{color:var(--gold)}.lb-rank.r2{color:var(--silver)}.lb-rank.r3{color:var(--bronze)}
-.lb-name{font-size:16px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-teams{font-size:12px;color:var(--muted);margin-top:2px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-bar-wrap{width:120px;flex-shrink:0}
-.lb-bar-bg{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
-.lb-bar-fill{height:100%;background:linear-gradient(to right,var(--neon),var(--blue));
-  border-radius:2px;transition:width 1s ease}
-.lb-score{font-size:24px;font-weight:900;min-width:56px;text-align:right;color:var(--neon)}
-.lb-hidden{padding:32px 20px;color:var(--muted);font-size:14px;font-style:italic}
-@media(max-width:600px){.lb-bar-wrap{display:none}}
+/* ── Fixture Schedule ── */
+.sched-group{margin-bottom:8px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border)}
+.sched-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;cursor:pointer;user-select:none;gap:12px;
+  background:rgba(255,255,255,0.03);transition:background .2s}
+.sched-hdr:hover{background:rgba(255,255,255,0.06)}
+.sched-hdr-left{display:flex;align-items:center;gap:10px}
+.sched-date-label{font-size:13px;font-weight:700}
+.sched-badge{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:2px 8px;border-radius:20px;font-weight:700}
+.sched-badge.today{background:rgba(0,255,136,.15);color:var(--neon);border:1px solid rgba(0,255,136,.3)}
+.sched-badge.past{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.sched-badge.upcoming{background:rgba(99,179,237,.12);color:#63b3ed;border:1px solid rgba(99,179,237,.25)}
+.sched-count{font-size:12px;color:var(--muted)}
+.sched-chevron{font-size:14px;color:var(--muted);transition:transform .25s;flex-shrink:0}
+.sched-body{display:grid;gap:8px;padding:10px 12px 14px;
+  background:rgba(0,0,0,.15)}
+.sched-body.collapsed{display:none}
+.sched-row{display:grid;grid-template-columns:auto 1fr 1fr auto;
+  align-items:center;gap:10px;
+  padding:10px 14px;border-radius:6px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border)}
+.sched-row.has-result{border-color:rgba(0,255,136,.2)}
+.sched-grp{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--neon);
+  font-weight:700;flex-shrink:0}
+.sched-team{display:flex;flex-direction:column;gap:2px}
+.sched-team-name{font-size:13px;font-weight:700}
+.sched-team-owner{font-size:11px;color:var(--muted)}
+.sched-vs{font-size:11px;color:var(--muted);text-align:center;flex-shrink:0}
+.sched-result{font-size:16px;font-weight:900;color:var(--neon);text-align:center;
+  min-width:36px;flex-shrink:0}
+.sched-result.win{color:var(--gold)}
+.sched-team-name.win{color:var(--gold)}
+.sched-meta{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0;white-space:nowrap}
+@media(max-width:600px){
+  .sched-row{grid-template-columns:auto 1fr 1fr auto;gap:6px;padding:8px 10px}
+  .sched-team-name{font-size:12px}
+}
+
+
 
 /* ── Insights ── */
 .ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
@@ -610,22 +633,78 @@ function renderFixtures(today){
   </div>`;
 }
 
-function renderLeaderboard(lb,started){
-  if(!started)return`<div class="lb-hidden">Standings activate once the tournament begins.</div>`;
-  const maxScore=Math.max(...lb.map(e=>e.score),1);
-  return lb.map(e=>{
-    const rc=e.rank===1?'r1':e.rank===2?'r2':e.rank===3?'r3':'';
-    const isFirst=e.rank===1;
-    return`<div class="lb-row glass reveal${isFirst?' rank-1':''}">
-      <div class="lb-rank ${rc}">${e.rank}</div>
-      <div style="flex:1;min-width:0">
-        <div class="lb-name">${e.name}</div>
-        <div class="lb-teams">${e.teams.join(' &middot; ')}</div>
+function renderFixtureSchedule(){
+  const today=todayStr();
+  const cutFuture=new Date(today+'T00:00:00');
+  cutFuture.setDate(cutFuture.getDate()+3);
+  const cutFutureStr=cutFuture.toISOString().slice(0,10);
+
+  // Group fixtures by date
+  const byDate={};
+  FIXTURES.forEach(f=>{
+    if(!byDate[f.d])byDate[f.d]=[];
+    byDate[f.d].push(f);
+  });
+  const dates=Object.keys(byDate).sort();
+  if(!dates.length)return'<div class="fix-empty">No fixtures loaded.</div>';
+
+  function dayLabel(d){
+    if(d===today)return'Today';
+    const diff=(new Date(d+'T00:00:00')-new Date(today+'T00:00:00'))/(86400000);
+    if(diff===1)return'Tomorrow';
+    if(diff===-1)return'Yesterday';
+    const dt=new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  }
+
+  function badgeClass(d){
+    if(d===today)return'today';
+    return d<today?'past':'upcoming';
+  }
+
+  return dates.map(d=>{
+    const fixes=byDate[d];
+    const isPast=d<today;
+    const isWindow=d>=today&&d<=cutFutureStr;
+    const isOpen=isWindow||d===today;
+    const badge=d===today?'Today':isPast?'Played':'Upcoming';
+    const label=dayLabel(d);
+
+    const rows=fixes.map(f=>{
+      const hasScore=f.hg!==undefined&&f.ag!==undefined;
+      const ho=TEAM_OWNER[f.home]||'';
+      const ao=TEAM_OWNER[f.away]||'';
+      const homeWon=hasScore&&f.hg>f.ag;
+      const awayWon=hasScore&&f.ag>f.hg;
+      const scoreHtml=hasScore
+        ?`<div class="sched-result">${f.hg}&ndash;${f.ag}</div>`
+        :`<div class="sched-meta">${f.t}<br>HKT</div>`;
+      return`<div class="sched-row${hasScore?' has-result':''}">
+        <div class="sched-grp">Grp ${f.group}</div>
+        <div class="sched-team">
+          <div class="sched-team-name${homeWon?' win':''}">${f.home}</div>
+          <div class="sched-team-owner">${ho}</div>
+        </div>
+        <div class="sched-team" style="text-align:right">
+          <div class="sched-team-name${awayWon?' win':''}">${f.away}</div>
+          <div class="sched-team-owner" style="text-align:right">${ao}</div>
+        </div>
+        ${scoreHtml}
+      </div>`;
+    }).join('');
+
+    return`<div class="sched-group">
+      <div class="sched-hdr" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.sched-chevron').style.transform=this.nextElementSibling.classList.contains('collapsed')?'':'rotate(90deg)'">
+        <div class="sched-hdr-left">
+          <span class="sched-date-label">${label}</span>
+          <span class="sched-badge ${badgeClass(d)}">${badge}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="sched-count">${fixes.length} match${fixes.length>1?'es':''}</span>
+          <span class="sched-chevron" style="transform:${isOpen?'rotate(90deg)':''}">&#9654;</span>
+        </div>
       </div>
-      <div class="lb-bar-wrap">
-        <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(e.score/maxScore*100)}%"></div></div>
-      </div>
-      <div class="lb-score" data-target="${e.score}">0</div>
+      <div class="sched-body${isOpen?'':' collapsed'}">${rows}</div>
     </div>`;
   }).join('');
 }
@@ -715,9 +794,9 @@ function renderAll(){
     </section>
 
     <section class="section">
-      <div class="sec-label">Rankings</div>
-      <h2 class="sec-title">Standings</h2>
-      ${renderLeaderboard(lb,started)}
+      <div class="sec-label">All Matches</div>
+      <h2 class="sec-title">Schedule</h2>
+      <div id="sched-sec">${renderFixtureSchedule()}</div>
     </section>
 
     <section class="section reveal">
