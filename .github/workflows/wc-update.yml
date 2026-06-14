@@ -24,6 +24,9 @@ jobs:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python wc_updater.py
 
+      - name: Validate dashboard JS syntax
+        run: python scripts/validate_dashboard.py
+
       - name: Commit updated dashboards
         run: |
           git config user.name  "wc-bot"
