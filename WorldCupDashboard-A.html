@@ -961,7 +961,8 @@ function buildLiveBanter(lb){
   // 1. Wooden spoon roast — always leads
   const last=lb[lb.length-1];
   const secondLast=lb.length>=2?lb[lb.length-2]:null;
-  if(last)lines.push(woodenSpoonRoast(last,secondLast,lb.length));
+  const lastHasPlayed=last&&last.teams.some(t=>{const d=RESULTS_DATA[t];return d&&(d.gf>0||d.ga>0);});
+  if(lastHasPlayed)lines.push(woodenSpoonRoast(last,secondLast,lb.length));
 
   // 2. Leader taunt if there is a clear gap
   const leader=lb[0];
