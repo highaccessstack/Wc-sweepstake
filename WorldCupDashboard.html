@@ -1021,11 +1021,7 @@ function buildLiveBanter(lb){
   const ausData=RESULTS_DATA['Australia'];
   const ausOwner=TEAM_OWNER['Australia']||'Steve';
   if(ausData&&ausData.gf>0&&ausData.ga===0){
-    lines.push(_pick([
-      'Straya out on a tear in game 1 \u2014 '+ausData.gf+' goals, clean sheet. '+ausOwner+' has been insufferably smug since full time. Totally warranted.',
-      'Crikey, Australia opened with a '+ausData.gf+'\u20130 belter. '+ausOwner+' is already texting everyone. No wuckas mate, no wuckas.',
-      ausData.gf+' goals, nil conceded \u2014 Straya on the board and loving life. '+ausOwner+' is doing laps of the office.',
-    ]));
+    lines.push('Straya out on a tear in game 1 \u2014 '+ausData.gf+' goals, clean sheet. '+ausOwner+' has been insufferably smug since full time. Totally warranted.');
   }
 
   // 3. Today/tomorrow office clashes with contextual sledge (max 2)
