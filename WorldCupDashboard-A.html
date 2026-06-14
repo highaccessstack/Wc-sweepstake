@@ -1017,7 +1017,7 @@ function initWorkplaceMatchups(){
     console.error('Office Duels: required globals missing');return;
   }
   const countryToOwner={};
-  PARTICIPANTS.forEach(u=>{u.assignedTeams.forEach(t=>{countryToOwner[t]=u.userId;});});
+  PARTICIPANTS.forEach(u=>{u.teams.forEach(t=>{countryToOwner[t]=u.name;});});
 
   const todayMidnight=new Date();todayMidnight.setHours(0,0,0,0);
 
