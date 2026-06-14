@@ -766,6 +766,14 @@ function renderAll(){
   const lb=buildLeaderboard();
   const insights=calculateInsights(lb);
   if(!order.length||order.length!==lb.length)order=lb.map((_,i)=>i);
+  order.sort((a,b)=>{
+    const pa=lb[a].teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
+    const pb=lb[b].teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
+    if(pb!==pa)return pb-pa;
+    const ga=lb[a].teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
+    const gb=lb[b].teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
+    return gb-ga;
+  });
 
   const logoSrc=`<img src="data:image/png;base64,${FIFA_LOGO_B64}" alt="FIFA">`;
 
