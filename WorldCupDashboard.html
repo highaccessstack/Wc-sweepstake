@@ -713,7 +713,6 @@ function renderInsights(insights,started){
   if(!started||!insights)return`<div class="ins-empty glass">Insights unlock once results are entered.</div>`;
   return`<div class="ins-grid">
     ${insights.map(i=>`<div class="ins-card glass reveal">
-      <div class="ins-icon">${i.icon}</div>
       <div class="ins-label">${i.label}</div>
       <div class="ins-text">${i.text}</div>
     </div>`).join('')}
