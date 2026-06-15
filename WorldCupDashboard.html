@@ -1197,6 +1197,36 @@ setInterval(function(){
 setInterval(function(){
   initBanterTicker(buildLiveBanter(buildLeaderboard()));
 },300000);
+
+/* live-poll: fetch wc_data.json every 10 min and hot-update globals */
+(function(){
+  var _lastSeen='';
+  function pollData(){
+    fetch('wc_data.json?_='+Date.now())
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(!d||d.last_updated===_lastSeen)return;
+        _lastSeen=d.last_updated;
+        Object.keys(RESULTS_DATA).forEach(function(k){delete RESULTS_DATA[k];});
+        Object.assign(RESULTS_DATA,d.results);
+        FIXTURES.forEach(function(fix){
+          var key=fix.home+'|'+fix.away;
+          if(d.match_scores&&d.match_scores[key]){fix.hg=d.match_scores[key][0];fix.ag=d.match_scores[key][1];}
+        });
+        BANTER_FEED.splice(0,BANTER_FEED.length);
+        if(d.banter_feed)d.banter_feed.forEach(function(b){BANTER_FEED.push(b);});
+        var started=Object.values(RESULTS_DATA).some(function(r){return r.gf>0||r.ga>0;});
+        var lb=buildLeaderboard();
+        document.getElementById('cgrid').innerHTML=renderCards(lb,order,started);
+        initCounters();
+        initReveal();
+        initBanterTicker(buildLiveBanter(lb));
+      })
+      .catch(function(){});
+  }
+  setInterval(pollData,600000);
+  pollData();
+})();
 </script>
 </body>
 </html>

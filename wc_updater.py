@@ -40,6 +40,7 @@ HTML_FILES    = [
 LOG_FILE      = SCRIPT_DIR / 'wc_updater.log'
 RESULTS_JSON  = SCRIPT_DIR / 'wc_results.json'
 BANTER_TXT    = SCRIPT_DIR / 'wc_banter.txt'
+DATA_JSON     = SCRIPT_DIR / 'wc_data.json'
 API_KEY_FILE  = SCRIPT_DIR / 'api_key.txt'
 
 # ── API (football-data.org — free tier covers WC) ────────────────────────────
@@ -397,6 +398,17 @@ def compute_results(fixtures):
 
     return results, match_scores
 
+# ── Data JSON export ──────────────────────────────────────────────────────────
+def write_data_json(results, match_scores, feed, ts):
+    data = {
+        'last_updated': ts,
+        'results': results,
+        'match_scores': {f'{h}|{a}': [hg, ag] for (h, a), (hg, ag) in match_scores.items()},
+        'banter_feed': feed,
+    }
+    DATA_JSON.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+    log.info('Wrote %s', DATA_JSON.name)
+
 # ── Banter generation ─────────────────────────────────────────────────────────
 def build_banter_feed(results):
     """Return list of banter strings for injection into the dashboard."""
@@ -705,6 +717,9 @@ def main():
     # ── Build banter feed ────────────────────────────────────────────────────
     feed = build_banter_feed(results)
     ts   = datetime.now(timezone.utc).strftime('%d %b %H:%M UTC')
+
+    # ── Write data JSON for browser polling ──────────────────────────────────
+    write_data_json(results, match_scores, feed, ts)
 
     # ── Patch HTML files ─────────────────────────────────────────────────────
     patched = 0
