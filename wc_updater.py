@@ -518,7 +518,7 @@ def patch_results_data(content, results):
     new_block = '\n'.join(lines)
 
     pattern = r'const RESULTS_DATA\s*=\s*\{[\s\S]*?\};'
-    new_content, count = re.subn(pattern, new_block, content, count=1)
+    new_content, count = re.subn(pattern, lambda m: new_block, content, count=1)
     if count == 0:
         log.warning('RESULTS_DATA block not found')
         return content, False
@@ -530,7 +530,7 @@ def patch_banter_feed(content, feed):
     new_block = f'const BANTER_FEED = [\n  {items}\n];'
 
     pattern = r'const BANTER_FEED\s*=\s*\[[\s\S]*?\];'
-    new_content, count = re.subn(pattern, new_block, content, count=1)
+    new_content, count = re.subn(pattern, lambda m: new_block, content, count=1)
     if count == 0:
         log.warning('BANTER_FEED block not found — run with --setup first')
         return content, False
