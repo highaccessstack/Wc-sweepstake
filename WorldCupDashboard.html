@@ -156,8 +156,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .lt-team{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;background:var(--neon-dim);color:var(--neon);margin:2px 2px 2px 0;white-space:nowrap}
 .lt-pts{text-align:right;font-size:22px;font-weight:900;color:var(--neon);text-shadow:0 0 15px var(--neon-glow);padding:14px 16px;white-space:nowrap}
 .lt-gf{text-align:right;padding:14px 12px;color:var(--text-dim);font-size:13px}
+.lt-sw{text-align:right;padding:14px 12px;color:var(--muted);font-size:13px}
 .lt-stage{padding:14px 12px;color:var(--muted);font-size:12px}
-@media(max-width:600px){.lt-stage,.lt-gf{display:none}}
+@media(max-width:600px){.lt-stage,.lt-gf,.lt-sw{display:none}}
 
 /* ── Shuffle button ── */
 .shuffle-btn{padding:10px 20px;background:var(--neon-dim);color:var(--neon);
@@ -722,25 +723,31 @@ function renderInsights(insights,started){
 
 function renderLeagueTable(lb,started){
   const STAGE_ORDER=['Group stage exit','Round of 32','Round of 16','Quarterfinals','Semifinals','Final (runner-up)','Champion'];
-  const rows=lb.map((e,i)=>{
+  const rows=lb.map(e=>({...e,fifaPts:e.teams.reduce((s,t)=>s+getTeamFifaPts(t),0)}));
+  const groupStage=started&&rows.every(e=>e.score===0);
+  if(groupStage)rows.sort((a,b)=>b.fifaPts-a.fifaPts||b.gf-a.gf);
+  const rendered=rows.map((e,i)=>{
+    const pos=groupStage?i+1:e.rank;
     const bestStage=e.teams.reduce((best,t)=>{
       const s=RESULTS_DATA[t]?.stage||'Group stage exit';
       return STAGE_ORDER.indexOf(s)>STAGE_ORDER.indexOf(best)?s:best;
     },'Group stage exit');
-    const isFirst=started&&e.rank===1;
-    const isLast=started&&i===lb.length-1;
+    const isFirst=started&&pos===1;
+    const isLast=started&&i===rows.length-1;
     const rowStyle=isFirst?'border-left:3px solid var(--gold);background:rgba(255,215,0,0.06)':
                    isLast?'border-left:3px solid rgba(255,80,80,.4);background:rgba(255,80,80,0.04)':
                    'border-left:3px solid transparent';
     const posStyle=isFirst?'color:var(--gold)':isLast?'color:#ff6b6b':'';
-    const ptsStyle=isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
     const nameStyle=isFirst?'color:var(--gold)':'';
+    const fifaStyle=groupStage&&isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
+    const swStyle=!groupStage&&isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
     const teamTags=e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('');
     return`<tr style="${rowStyle}">
-      <td class="lt-pos" style="${posStyle}">${e.rank}</td>
+      <td class="lt-pos" style="${posStyle}">${pos}</td>
       <td class="lt-name" style="${nameStyle}">${e.name}</td>
       <td class="lt-teams">${teamTags}</td>
-      <td class="lt-pts" style="${ptsStyle}"${started?` data-target="${e.score}"`:''} >${started?'0':'—'}</td>
+      <td class="lt-pts" style="${fifaStyle}"${started?` data-target="${e.fifaPts}"`:''} >${started?'0':'—'}</td>
+      <td class="lt-sw">${started?e.score:'—'}</td>
       <td class="lt-gf">${started?e.gf:'—'}</td>
       <td class="lt-stage">${started?bestStage:'Pre-tournament'}</td>
     </tr>`;
@@ -750,11 +757,12 @@ function renderLeagueTable(lb,started){
       <th class="lt-pos">#</th>
       <th class="lt-name">Player</th>
       <th class="lt-teams">Teams</th>
-      <th class="lt-pts" style="text-align:right">Pts</th>
+      <th class="lt-pts" style="text-align:right" title="FIFA pts (W=3 D=1 L=0 across all group matches)">FIFA Pts</th>
+      <th class="lt-sw" style="text-align:right" title="Sweepstake pts (stage advancement)">SW Pts</th>
       <th class="lt-gf" style="text-align:right">GF</th>
       <th class="lt-stage">Best Stage</th>
     </tr></thead>
-    <tbody>${rows}</tbody>
+    <tbody>${rendered}</tbody>
   </table>`;
 }
 
