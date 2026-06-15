@@ -145,23 +145,19 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .ins-text{font-size:14px;color:var(--text);line-height:1.6}
 .ins-empty{padding:32px;color:var(--muted);font-size:14px;font-style:italic}
 
-/* ── Player cards ── */
-.cards-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-.pcard{padding:24px}
-.pcard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.pcard-name{font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
-.pcard-score{font-size:32px;font-weight:900;color:var(--neon);text-shadow:0 0 20px var(--neon-glow)}
-.pcard-score.rank1{color:var(--gold);text-shadow:0 0 25px rgba(255,215,0,0.4)}
-.pcard-rank{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.team-list{display:flex;flex-direction:column;gap:8px}
-.team-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.team-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.team-badges{display:flex;gap:4px;align-items:center;flex-shrink:0}
-.group-badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;background:var(--neon-dim);color:var(--neon)}
-.fifa-pts-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;background:rgba(255,215,0,.12);color:var(--gold)}
-.goals-badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;background:rgba(255,255,255,.06);color:var(--muted)}
-.pcard-pts-label{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+/* ── League Table ── */
+.league-table{width:100%;border-collapse:collapse;font-size:14px}
+.league-table thead th{padding:10px 12px;text-align:left;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap}
+.league-table tbody tr{border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+.league-table tbody tr:hover{background:rgba(255,255,255,.04)!important}
+.lt-pos{width:32px;text-align:center;font-size:13px;font-weight:700;color:var(--text-dim);padding:14px 8px}
+.lt-name{font-size:15px;font-weight:800;padding:14px 12px;white-space:nowrap}
+.lt-teams{padding:10px 12px}
+.lt-team{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;background:var(--neon-dim);color:var(--neon);margin:2px 2px 2px 0;white-space:nowrap}
+.lt-pts{text-align:right;font-size:22px;font-weight:900;color:var(--neon);text-shadow:0 0 15px var(--neon-glow);padding:14px 16px;white-space:nowrap}
+.lt-gf{text-align:right;padding:14px 12px;color:var(--text-dim);font-size:13px}
+.lt-stage{padding:14px 12px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.lt-stage,.lt-gf{display:none}}
 
 /* ── Shuffle button ── */
 .shuffle-btn{padding:10px 20px;background:var(--neon-dim);color:var(--neon);
@@ -724,35 +720,43 @@ function renderInsights(insights,started){
   </div>`;
 }
 
-function renderCards(lb,order,started){
-  return order.map(i=>{
-    const e=lb[i];if(!e)return'';
+function renderLeagueTable(lb,started){
+  const rows=lb.map((e,i)=>{
+    const totalPts=e.teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
+    const totalGf=e.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
+    const bestStage=e.teams.reduce((best,t)=>{
+      const s=RESULTS_DATA[t]?.stage||'Group stage exit';
+      return(STAGE_POINTS[s]||0)>(STAGE_POINTS[best]||0)?s:best;
+    },'Group stage exit');
     const isFirst=started&&e.rank===1;
-    const teamData=e.teams.map(t=>{
-      const r=RESULTS_DATA[t]||{gf:0,ga:0};
-      const fp=getTeamFifaPts(t);
-      const played=r.gf>0||r.ga>0||(FIXTURES.some(f=>(f.home===t||f.away===t)&&f.hg!==undefined));
-      return{name:t,pts:fp,gf:r.gf,ga:r.ga,played};
-    });
-    const totalFifaPts=teamData.reduce((s,t)=>s+t.pts,0);
-    const totalGf=teamData.reduce((s,t)=>s+t.gf,0);
-    return`<div class="pcard glass reveal" style="${isFirst?'border-color:rgba(255,215,0,0.35);box-shadow:0 0 40px rgba(255,215,0,0.12)':''}">
-      <div class="pcard-top">
-        <div class="pcard-name">${e.name}</div>
-        <div class="pcard-score${isFirst?' rank1':''}" data-target="${started?totalFifaPts:0}">${started?'0':'—'}</div>
-      </div>
-      <div class="pcard-rank">${started?`${totalFifaPts} FIFA pts &middot; ${totalGf} goals`:'Pre-tournament'}</div>
-      <div class="team-list">
-        ${teamData.map(t=>`<div class="team-row">
-          <span class="team-name">${t.name}</span>
-          <span class="team-badges">
-            ${started&&t.played?`<span class="fifa-pts-badge">${t.pts}pt${t.pts!==1?'s':''}</span>`:''}
-            ${started&&t.played?`<span class="goals-badge">${t.gf}\u2013${t.ga}</span>`:''}
-          </span>
-        </div>`).join('')}
-      </div>
-    </div>`;
+    const isLast=started&&i===lb.length-1;
+    const rowStyle=isFirst?'border-left:3px solid var(--gold);background:rgba(255,215,0,0.06)':
+                   isLast?'border-left:3px solid rgba(255,80,80,.4);background:rgba(255,80,80,0.04)':
+                   'border-left:3px solid transparent';
+    const posStyle=isFirst?'color:var(--gold)':isLast?'color:#ff6b6b':'';
+    const ptsStyle=isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
+    const nameStyle=isFirst?'color:var(--gold)':'';
+    const teamTags=e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('');
+    return`<tr style="${rowStyle}">
+      <td class="lt-pos" style="${posStyle}">${e.rank}</td>
+      <td class="lt-name" style="${nameStyle}">${e.name}</td>
+      <td class="lt-teams">${teamTags}</td>
+      <td class="lt-pts" style="${ptsStyle}"${started?` data-target="${totalPts}"`:''} >${started?'0':'—'}</td>
+      <td class="lt-gf">${started?totalGf:'—'}</td>
+      <td class="lt-stage">${started?bestStage:'Pre-tournament'}</td>
+    </tr>`;
   }).join('');
+  return`<table class="league-table glass">
+    <thead><tr>
+      <th class="lt-pos">#</th>
+      <th class="lt-name">Player</th>
+      <th class="lt-teams">Teams</th>
+      <th class="lt-pts" style="text-align:right">Pts</th>
+      <th class="lt-gf" style="text-align:right">GF</th>
+      <th class="lt-stage">Best Stage</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -813,14 +817,9 @@ function renderAll(){
     </section>
 
     <section class="section">
-      <div class="cards-hdr">
-        <div>
-          <div class="sec-label">All Players</div>
-          <h2 class="sec-title" style="margin-bottom:0">Player Cards</h2>
-        </div>
-        <button class="shuffle-btn" id="shuf">&#9654; Shuffle</button>
-      </div>
-      <div class="cards-grid" id="cgrid">${renderCards(lb,order,started)}</div>
+      <div class="sec-label">Standings</div>
+      <h2 class="sec-title">League Table</h2>
+      <div id="cgrid">${renderLeagueTable(lb,started)}</div>
     </section>
 
     <section class="section">
@@ -834,16 +833,6 @@ function renderAll(){
       <p style="opacity:.55;font-size:.72em;margin-top:.5rem;">Built with VS Code &middot; Claude Sonnet 4.6 &middot; Vanilla JS &middot; GitHub Pages &middot; GitHub Actions &middot; API-Football live data &middot; results auto-published every 4 hrs</p>
     </footer>
   </div>`;
-
-  // Shuffle
-  const shuf=document.getElementById('shuf');
-  if(shuf)shuf.onclick=()=>{
-    for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
-    const st=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
-    document.getElementById('cgrid').innerHTML=renderCards(buildLeaderboard(),order,st);
-    initCounters();
-    initReveal();
-  };
 
   // Progress bar
   updateProgress();
@@ -1217,7 +1206,7 @@ setInterval(function(){
         if(d.banter_feed)d.banter_feed.forEach(function(b){BANTER_FEED.push(b);});
         var started=Object.values(RESULTS_DATA).some(function(r){return r.gf>0||r.ga>0;});
         var lb=buildLeaderboard();
-        document.getElementById('cgrid').innerHTML=renderCards(lb,order,started);
+        document.getElementById('cgrid').innerHTML=renderLeagueTable(lb,started);
         initCounters();
         initReveal();
         initBanterTicker(buildLiveBanter(lb));
