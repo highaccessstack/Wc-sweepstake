@@ -721,12 +721,11 @@ function renderInsights(insights,started){
 }
 
 function renderLeagueTable(lb,started){
+  const STAGE_ORDER=['Group stage exit','Round of 32','Round of 16','Quarterfinals','Semifinals','Final (runner-up)','Champion'];
   const rows=lb.map((e,i)=>{
-    const totalPts=e.teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
-    const totalGf=e.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
     const bestStage=e.teams.reduce((best,t)=>{
       const s=RESULTS_DATA[t]?.stage||'Group stage exit';
-      return(STAGE_POINTS[s]||0)>(STAGE_POINTS[best]||0)?s:best;
+      return STAGE_ORDER.indexOf(s)>STAGE_ORDER.indexOf(best)?s:best;
     },'Group stage exit');
     const isFirst=started&&e.rank===1;
     const isLast=started&&i===lb.length-1;
@@ -741,8 +740,8 @@ function renderLeagueTable(lb,started){
       <td class="lt-pos" style="${posStyle}">${e.rank}</td>
       <td class="lt-name" style="${nameStyle}">${e.name}</td>
       <td class="lt-teams">${teamTags}</td>
-      <td class="lt-pts" style="${ptsStyle}"${started?` data-target="${totalPts}"`:''} >${started?'0':'—'}</td>
-      <td class="lt-gf">${started?totalGf:'—'}</td>
+      <td class="lt-pts" style="${ptsStyle}"${started?` data-target="${e.score}"`:''} >${started?'0':'—'}</td>
+      <td class="lt-gf">${started?e.gf:'—'}</td>
       <td class="lt-stage">${started?bestStage:'Pre-tournament'}</td>
     </tr>`;
   }).join('');
