@@ -1095,19 +1095,58 @@ function buildLiveBanter(lb){
     const ho=countryToOwner[fix.home],ao=countryToOwner[fix.away];
     const sledge=generateContextualSledge(fix.home,fix.away);
     const label=fix.d===todayIso?'TODAY':'TOMORROW';
-    lines.push('OFFICE CLASH '+label+' — '+ho+' ('+fix.home+') vs '+ao+' ('+fix.away+'): '+sledge);
+    lines.push('OFFICE CLASH '+label+' \u2014 '+ho+' ('+fix.home+') vs '+ao+' ('+fix.away+'): '+sledge);
   });
 
-  // 4. Stats pad if under 4 lines
-  if(lines.length<4){
-    const topGf=[...lb].sort((a,b)=>b.gf-a.gf)[0];
-    if(topGf&&topGf.gf>0)lines.push(topGf.name+'\'s teams lead the goals chart with '+topGf.gf+' — '+topGf.name+' is cautiously optimistic and insufferably vocal about it.');
+  // 4. Top goals participant callout
+  const topGf=[...lb].sort((a,b)=>b.gf-a.gf)[0];
+  if(topGf&&topGf.gf>0){
+    lines.push(_pick([
+      topGf.name+'\u2019s teams lead the goals chart with '+topGf.gf+' \u2014 showing up when it counts.',
+      'Most goals in this sweepstake: '+topGf.name+' with '+topGf.gf+'. That\u2019s the kind of stat you put in the group chat.',
+      topGf.name+' is pumping in goals. '+topGf.gf+' for the tournament. Dangerous.',
+    ]));
   }
 
-  // 5. Static fallback pad
-  if(lines.length<4)lines.push(...BANTER_FEED);
+  // 5. Most goals conceded roast
+  const gaMap=lb.map(p=>({name:p.name,ga:p.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.ga||0),0)}));
+  const mostGA=gaMap.sort((a,b)=>b.ga-a.ga)[0];
+  if(mostGA&&mostGA.ga>0){
+    lines.push(_pick([
+      mostGA.name+'\u2019s teams have shipped '+mostGA.ga+' goals between them. A sieve at the back.',
+      'Defensive crisis: '+mostGA.name+' has conceded '+mostGA.ga+'. They are not keeping clean sheets. They are not trying to.',
+      'Leakiest defence award goes to '+mostGA.name+' with '+mostGA.ga+' conceded. Goals for everyone, just not for the right team.',
+    ]));
+  }
 
-  return lines.filter(Boolean).slice(0,5);
+  // 6. Neck-and-neck FIFA pts battle
+  const byFifa=lb.map(p=>({...p,fifa:p.teams.reduce((s,t)=>s+getTeamFifaPts(t),0)})).sort((a,b)=>b.fifa-a.fifa);
+  for(let i=0;i<byFifa.length-1;i++){
+    if(byFifa[i].fifa===byFifa[i+1].fifa&&byFifa[i].fifa>0){
+      lines.push(byFifa[i].name+' and '+byFifa[i+1].name+' are dead level on '+byFifa[i].fifa+' FIFA pts. Something has to give.');
+      break;
+    }
+  }
+
+  // 7. Zero scorer roast — participant whose teams have zero goals
+  const scoreless=lb.filter(p=>p.gf===0&&p.teams.some(t=>{const d=RESULTS_DATA[t];return d&&(d.gf>0||d.ga>0);}));
+  if(scoreless.length){
+    const s=scoreless[Math.floor(Math.random()*scoreless.length)];
+    lines.push(_pick([
+      s.name+'\u2019s teams have scored zero goals so far. Absolute drought. The ball has avoided them personally.',
+      'Not a single goal from '+s.name+'\u2019s teams yet. Frustrating viewing. Brave face.',
+      s.name+': still waiting for the first goal. The optimism is admirable at this point.',
+    ]));
+  }
+
+  // 8-10. Pad from CI-generated BANTER_FEED (scorers, stage banter, etc.)
+  const banterPool=[...BANTER_FEED];
+  while(lines.length<10&&banterPool.length){
+    const i=Math.floor(Math.random()*banterPool.length);
+    lines.push(banterPool.splice(i,1)[0]);
+  }
+
+  return lines.filter(Boolean).slice(0,10);
 }
 
 function initBanterTicker(lines){
