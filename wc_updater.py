@@ -303,6 +303,31 @@ def api_get(endpoint, params=None, api_key=None):
 def normalise(api_name):
     return API_NAME_MAP.get(api_name, api_name)
 
+def fetch_scorers(api_key):
+    """Fetch top scorers from the WC. Returns list of dicts sorted by goals desc."""
+    url = f'{BASE_URL}/competitions/WC/scorers'
+    headers = {'X-Auth-Token': api_key}
+    try:
+        resp = requests.get(url, headers=headers, params={'limit': 20}, timeout=30)
+    except requests.exceptions.SSLError:
+        import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        resp = requests.get(url, headers=headers, params={'limit': 20}, timeout=30, verify=False)
+    if resp.status_code != 200:
+        log.warning('Scorers fetch failed: HTTP %s', resp.status_code)
+        return []
+    out = []
+    for s in resp.json().get('scorers', []):
+        team = normalise(s.get('team', {}).get('name', ''))
+        out.append({
+            'player':  s.get('player', {}).get('name', ''),
+            'team':    team,
+            'owner':   TEAM_OWNER.get(team, ''),
+            'goals':   s.get('goals', 0) or 0,
+            'assists': s.get('assists', 0) or 0,
+        })
+    log.info('Fetched %d scorers', len(out))
+    return out
+
 # ── Core: derive RESULTS_DATA from raw fixtures ───────────────────────────────
 def compute_results(fixtures):
     """
@@ -399,18 +424,60 @@ def compute_results(fixtures):
     return results, match_scores
 
 # ── Data JSON export ──────────────────────────────────────────────────────────
-def write_data_json(results, match_scores, feed, ts):
+def write_data_json(results, match_scores, feed, ts, scorers=None):
     data = {
         'last_updated': ts,
         'results': results,
         'match_scores': {f'{h}|{a}': [hg, ag] for (h, a), (hg, ag) in match_scores.items()},
         'banter_feed': feed,
+        'scorers': scorers or [],
     }
     DATA_JSON.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
     log.info('Wrote %s', DATA_JSON.name)
 
 # ── Banter generation ─────────────────────────────────────────────────────────
-def build_banter_feed(results):
+def build_scorer_banter(scorers):
+    """Generate banter lines from top scorer data."""
+    if not scorers:
+        return []
+    lines = []
+    top = scorers[0]
+    if top['goals'] > 0:
+        owner_bit = f" ({top['owner']}\u2019s pick)" if top['owner'] else ''
+        g = top['goals']
+        lines.append(
+            f"Golden Boot leader: {top['player']} ({top['team']}{owner_bit}) with "
+            f"{g} goal{'s' if g != 1 else ''}. That\u2019s what we\u2019re here for."
+        )
+    for p in PARTICIPANTS:
+        p_scorers = [s for s in scorers if s['owner'] == p['name'] and s['goals'] > 0]
+        if p_scorers:
+            best = p_scorers[0]
+            g = best['goals']
+            lines.append(
+                f"{p['name']}\u2019s {best['team']} have {best['player']} on "
+                f"{g} goal{'s' if g != 1 else ''}. " +
+                random.choice([
+                    'Value pick.',
+                    'That\u2019s doing the business.',
+                    'The return on investment is very real.',
+                    'Making the sweepstake worth watching.',
+                    'Not bad at all.',
+                ])
+            )
+        else:
+            lines.append(
+                f"{p['name']}\u2019s teams haven\u2019t troubled the scorers chart yet. " +
+                random.choice([
+                    'Glass half full: there\u2019s still time.',
+                    'The drought is real.',
+                    'Defending is a skill too. Allegedly.',
+                    'Consistent, if nothing else.',
+                ])
+            )
+    return lines
+
+def build_banter_feed(results, scorers=None):
     """Return list of banter strings for injection into the dashboard."""
     feed = []
 
@@ -442,6 +509,10 @@ def build_banter_feed(results):
 
     # Aus/Pom/Kiwi rivalry lines
     feed.extend(build_rivalry_banter(results))
+
+    # Scorer banter
+    if scorers:
+        feed.extend(build_scorer_banter(scorers))
 
     # Leaderboard snapshot banter
     scored = [(TEAM_OWNER.get(t,'?'), sum(STAGE_POINTS.get(r['stage'],0) for r in [rv] if r)
@@ -546,7 +617,21 @@ def patch_last_updated(content, ts):
         return content, False
     return new_content, True
 
-def patch_html_file(filepath, results, feed, ts, match_scores=None):
+def patch_scorers_data(content, scorers):
+    """Replace const SCORERS_DATA = [...]; in the HTML."""
+    items = ',\n  '.join(
+        f"{{player:'{_js_str(s['player'])}',team:'{_js_str(s['team'])}',owner:'{_js_str(s['owner'])}',goals:{s['goals']},assists:{s['assists']}}}"
+        for s in scorers
+    )
+    new_block = f'const SCORERS_DATA = [\n  {items}\n];' if items else 'const SCORERS_DATA = [];'
+    pattern = r'const SCORERS_DATA\s*=\s*\[[\s\S]*?\];'
+    new_content, count = re.subn(pattern, lambda m: new_block, content, count=1)
+    if count == 0:
+        log.warning('SCORERS_DATA not found in HTML')
+        return content, False
+    return new_content, True
+
+def patch_html_file(filepath, results, feed, ts, match_scores=None, scorers=None):
     path    = Path(filepath)
     content = path.read_text(encoding='utf-8')
     changed = False
@@ -555,6 +640,8 @@ def patch_html_file(filepath, results, feed, ts, match_scores=None):
     content, ok = patch_fixture_scores(content, match_scores or {}); changed = changed or ok
     content, ok = patch_banter_feed(content, feed);                  changed = changed or ok
     content, ok = patch_last_updated(content, ts);                   changed = changed or ok
+    if scorers is not None:
+        content, ok = patch_scorers_data(content, scorers);          changed = changed or ok
 
     if changed:
         path.write_text(content, encoding='utf-8')
@@ -704,6 +791,14 @@ def main():
         results, match_scores = compute_results(fixtures)
         log.info('Computed results for %d teams, %d match scores', len(results), len(match_scores))
 
+    # ── Fetch scorers ────────────────────────────────────────────────────────
+    scorers = []
+    if api_key and not args.force_demo:
+        try:
+            scorers = fetch_scorers(api_key)
+        except Exception as e:
+            log.warning('Scorers fetch failed (non-fatal): %s', e)
+
     # ── Save debug JSON ──────────────────────────────────────────────────────
     RESULTS_JSON.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding='utf-8')
 
@@ -715,17 +810,17 @@ def main():
         return
 
     # ── Build banter feed ────────────────────────────────────────────────────
-    feed = build_banter_feed(results)
+    feed = build_banter_feed(results, scorers)
     ts   = datetime.now(timezone.utc).strftime('%d %b %H:%M UTC')
 
     # ── Write data JSON for browser polling ──────────────────────────────────
-    write_data_json(results, match_scores, feed, ts)
+    write_data_json(results, match_scores, feed, ts, scorers)
 
     # ── Patch HTML files ─────────────────────────────────────────────────────
     patched = 0
     for f in HTML_FILES:
         if f.exists():
-            if patch_html_file(f, results, feed, ts, match_scores):
+            if patch_html_file(f, results, feed, ts, match_scores, scorers):
                 patched += 1
         else:
             log.warning('Not found: %s', f)
