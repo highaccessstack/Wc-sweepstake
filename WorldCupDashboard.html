@@ -1072,20 +1072,17 @@ function buildLiveBanter(lb){
   if(ausData&&ausData.gf>0){
     const ausPlayed=FIXTURES.filter(f=>(f.home==='Australia'||f.away==='Australia')&&f.hg!==undefined).length;
     if(ausData.ga===0){
-      lines.push(ausPlayed===1
-        ? _pick([
-            'Straya out on a tear in game 1 \u2014 '+ausData.gf+' goals, clean sheet. '+ausOwner+' has been insufferably smug since full time. Totally warranted.',
-            'Crikey, Australia opened with a '+ausData.gf+'\u20130 belter. '+ausOwner+' is already texting everyone. No wuckas mate, no wuckas.',
-          ])
-        : _pick([
-            'Australia: '+ausData.gf+' goals, zero conceded across '+ausPlayed+' games. '+ausOwner+' is insufferable and fully entitled to be.',
-            'Straya unbeaten, '+ausData.gf+' goals, clean sheet intact after '+ausPlayed+' games. '+ausOwner+' has not shut up about it. Fair enough.',
-          ])
-      );
+      lines.push(_pick([
+        'Australia: '+ausData.gf+' goal'+(ausData.gf!==1?'s':'')+', zero conceded across '+ausPlayed+' game'+(ausPlayed!==1?'s':'')+'. '+ausOwner+' is insufferable and fully entitled to be.',
+        'Straya unbeaten, '+ausData.gf+'\u20130 after '+ausPlayed+' game'+(ausPlayed!==1?'s':'')+'. '+ausOwner+' has not shut up about it. Fair enough.',
+        'Clean sheet AND goals on the board for Australia. '+ausOwner+' is walking taller than everyone else in this sweepstake right now.',
+        'The Aussies: '+ausData.gf+' scored, none conceded. '+ausOwner+' does not need any encouragement. It has been given anyway.',
+      ]));
     } else {
       lines.push(_pick([
         'Australia '+ausData.gf+'\u2013'+ausData.ga+' on goals after '+ausPlayed+' game'+(ausPlayed!==1?'s':'')+'. '+ausOwner+' will take it.',
-        'The Aussies have conceded now. '+ausOwner+' is still upbeat. They\'re still scoring.',
+        'The Aussies have conceded but they\u2019re still on the board. '+ausOwner+' is staying positive.',
+        'Australia scoring freely, leaking a few. '+ausOwner+' is keeping the faith.',
       ]));
     }
   }
