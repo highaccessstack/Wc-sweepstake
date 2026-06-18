@@ -364,8 +364,8 @@ const FIXTURES = [
   {group:'J',home:'Austria',away:'Jordan',d:'2026-06-17',t:'12:00',hg:3,ag:1},
   {group:'K',home:'Portugal',away:'DR Congo',d:'2026-06-18',t:'01:00',hg:1,ag:1},
   {group:'L',home:'England',away:'Croatia',d:'2026-06-18',t:'04:00',hg:4,ag:2},
-  {group:'L',home:'Ghana',away:'Panama',d:'2026-06-18',t:'07:00'},
-  {group:'K',home:'Uzbekistan',away:'Colombia',d:'2026-06-18',t:'10:00'},
+  {group:'L',home:'Ghana',away:'Panama',d:'2026-06-18',t:'07:00',hg:1,ag:0},
+  {group:'K',home:'Uzbekistan',away:'Colombia',d:'2026-06-18',t:'10:00',hg:1,ag:3},
   {group:'A',home:'Czechia',away:'South Africa',d:'2026-06-19',t:'00:00'},
   {group:'B',home:'Switzerland',away:'Bosnia and Herzegovina',d:'2026-06-19',t:'03:00'},
   {group:'B',home:'Canada',away:'Qatar',d:'2026-06-19',t:'06:00'},
@@ -417,23 +417,23 @@ const FIXTURES = [
 ];
 
 const BANTER_FEED = [
-  'The beautiful game has spoken. Whether you like what it said is another matter.',
+  'Results updated. If your teams are doing well: don\u2019t be smug. If they\u2019re not: condolences.',
   'Golden Boot leader: Lionel Messi (Argentina (Hugh\u2019s pick)) with 3 goals. That\u2019s what we\u2019re here for.',
-  'Pritish\u2019s England have Harry Kane on 2 goals. Making the sweepstake worth watching.',
-  'Steve\u2019s Qatar have Boualem Khoukhi on 1 goal. That\u2019s doing the business.',
-  'Damir\u2019s Paraguay have Mauricio on 1 goal. Not bad at all.',
+  'Pritish\u2019s England have Harry Kane on 2 goals. The return on investment is very real.',
+  'Steve\u2019s Qatar have Boualem Khoukhi on 1 goal. Value pick.',
+  'Damir\u2019s Paraguay have Mauricio on 1 goal. Value pick.',
   'Hugh\u2019s Argentina have Lionel Messi on 3 goals. The return on investment is very real.',
-  'Adam\u2019s Germany have Kai Havertz on 2 goals. The return on investment is very real.',
+  'Adam\u2019s Germany have Kai Havertz on 2 goals. That\u2019s doing the business.',
   'James\u2019s Morocco have Ismael Saibari on 1 goal. Making the sweepstake worth watching.',
-  'Pardeep\u2019s Sweden have Yasin Ayari on 2 goals. That\u2019s doing the business.',
-  'Ajit\u2019s Norway have Erling Haaland on 2 goals. Value pick.',
-  'Nuno\u2019s France have Kylian Mbappé on 2 goals. Making the sweepstake worth watching.',
-  'Quentin\u2019s USA have Folarin Balogun on 2 goals. Not bad at all.',
+  'Pardeep\u2019s Sweden have Yasin Ayari on 2 goals. Making the sweepstake worth watching.',
+  'Ajit\u2019s Norway have Erling Haaland on 2 goals. Not bad at all.',
+  'Nuno\u2019s France have Kylian Mbappé on 2 goals. Not bad at all.',
+  'Quentin\u2019s USA have Folarin Balogun on 2 goals. That\u2019s doing the business.',
   'Nomso\u2019s South Korea have In-beom Hwang on 1 goal. That\u2019s doing the business.',
-  'Mark\u2019s Mexico have Julián Quiñones on 1 goal. The return on investment is very real.',
+  'Mark\u2019s Mexico have Julián Quiñones on 1 goal. Value pick.',
   'Bottom of the table: Mark on 0 points. The floor is lava and Mark is standing in it.'
 ];
-const LAST_UPDATED = '17 Jun 22:26 UTC';
+const LAST_UPDATED = '18 Jun 12:32 UTC';
 const SCORERS_DATA = [
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:3,assists:0},
   {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:2,assists:0},
@@ -466,7 +466,7 @@ const RESULTS_DATA = {
   'Brazil':{stage:'Group stage exit',gf:1,ga:1},
   'Canada':{stage:'Group stage exit',gf:1,ga:1},
   'Cape Verde':{stage:'Group stage exit',gf:0,ga:0},
-  'Colombia':{stage:'Group stage exit',gf:0,ga:0},
+  'Colombia':{stage:'Group stage exit',gf:3,ga:1},
   'Croatia':{stage:'Group stage exit',gf:2,ga:4},
   'Curaçao':{stage:'Group stage exit',gf:1,ga:7},
   'Czechia':{stage:'Group stage exit',gf:1,ga:2},
@@ -477,7 +477,7 @@ const RESULTS_DATA = {
   'England':{stage:'Group stage exit',gf:4,ga:2},
   'France':{stage:'Group stage exit',gf:3,ga:1},
   'Germany':{stage:'Group stage exit',gf:7,ga:1},
-  'Ghana':{stage:'Group stage exit',gf:0,ga:0},
+  'Ghana':{stage:'Group stage exit',gf:1,ga:0},
   'Haiti':{stage:'Group stage exit',gf:0,ga:1},
   'Iran':{stage:'Group stage exit',gf:2,ga:2},
   'Iraq':{stage:'Group stage exit',gf:1,ga:4},
@@ -488,7 +488,7 @@ const RESULTS_DATA = {
   'Netherlands':{stage:'Group stage exit',gf:2,ga:2},
   'New Zealand':{stage:'Group stage exit',gf:2,ga:2},
   'Norway':{stage:'Group stage exit',gf:4,ga:1},
-  'Panama':{stage:'Group stage exit',gf:0,ga:0},
+  'Panama':{stage:'Group stage exit',gf:0,ga:1},
   'Paraguay':{stage:'Group stage exit',gf:1,ga:4},
   'Portugal':{stage:'Group stage exit',gf:1,ga:1},
   'Qatar':{stage:'Group stage exit',gf:1,ga:1},
@@ -504,7 +504,7 @@ const RESULTS_DATA = {
   'Türkiye':{stage:'Group stage exit',gf:0,ga:2},
   'USA':{stage:'Group stage exit',gf:4,ga:1},
   'Uruguay':{stage:'Group stage exit',gf:1,ga:1},
-  'Uzbekistan':{stage:'Group stage exit',gf:0,ga:0},
+  'Uzbekistan':{stage:'Group stage exit',gf:1,ga:3},
 };
 
 /* ═══════════════════════════════════════════
