@@ -402,7 +402,7 @@ const FIXTURES = [
   {group:'F',home:'Japan',away:'Sweden',d:'2026-06-26',t:'07:00',hg:1,ag:1},
   {group:'D',home:'Paraguay',away:'Australia',d:'2026-06-26',t:'10:00',hg:0,ag:0},
   {group:'D',home:'Türkiye',away:'USA',d:'2026-06-26',t:'10:00',hg:3,ag:2},
-  {group:'I',home:'Norway',away:'France',d:'2026-06-27',t:'03:00'},
+  {group:'I',home:'Norway',away:'France',d:'2026-06-27',t:'03:00',hg:1,ag:4},
   {group:'I',home:'Senegal',away:'Iraq',d:'2026-06-27',t:'03:00'},
   {group:'H',home:'Cape Verde',away:'Saudi Arabia',d:'2026-06-27',t:'08:00'},
   {group:'H',home:'Uruguay',away:'Spain',d:'2026-06-27',t:'08:00'},
@@ -417,34 +417,36 @@ const FIXTURES = [
 ];
 
 const BANTER_FEED = [
-  'Results updated. If your teams are doing well: don\u2019t be smug. If they\u2019re not: condolences.',
+  'Another update from the tournament. Someone\u2019s about to get very happy and someone\u2019s about to be insufferable about it.',
   'Golden Boot leader: Lionel Messi (Argentina (Hugh\u2019s pick)) with 5 goals. That\u2019s what we\u2019re here for.',
-  'Pritish\u2019s Switzerland have Johan Manzambi on 3 goals. That\u2019s doing the business.',
-  'Steve\u2019s Netherlands have Brian Brobbey on 3 goals. Making the sweepstake worth watching.',
-  'Damir\u2019s Brazil have Vinicius Junior on 4 goals. Value pick.',
-  'Hugh\u2019s Argentina have Lionel Messi on 5 goals. The return on investment is very real.',
-  'Adam\u2019s Germany have Deniz Undav on 3 goals. Not bad at all.',
-  'James\u2019s Morocco have Ismael Saibari on 3 goals. Making the sweepstake worth watching.',
+  'Pritish\u2019s Switzerland have Johan Manzambi on 3 goals. Value pick.',
+  'Steve\u2019s Netherlands have Brian Brobbey on 3 goals. That\u2019s doing the business.',
+  'Damir\u2019s Brazil have Vinicius Junior on 4 goals. Making the sweepstake worth watching.',
+  'Hugh\u2019s Argentina have Lionel Messi on 5 goals. Not bad at all.',
+  'Adam\u2019s Germany have Deniz Undav on 3 goals. Value pick.',
+  'James\u2019s Morocco have Ismael Saibari on 3 goals. That\u2019s doing the business.',
   'Pardeep\u2019s Sweden have Yasin Ayari on 2 goals. Value pick.',
-  'Ajit\u2019s Norway have Erling Haaland on 4 goals. Making the sweepstake worth watching.',
+  'Ajit\u2019s Norway have Erling Haaland on 4 goals. The return on investment is very real.',
   'Nuno\u2019s France have Kylian Mbappé on 4 goals. That\u2019s doing the business.',
   'Quentin\u2019s USA have Folarin Balogun on 2 goals. The return on investment is very real.',
-  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Consistent, if nothing else.',
+  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Glass half full: there\u2019s still time.',
   'Mark\u2019s Mexico have Julián Quiñones on 2 goals. Value pick.',
   'Bottom of the table: Mark on 0 points. The floor is lava and Mark is standing in it.'
 ];
-const LAST_UPDATED = '26 Jun 12:26 UTC';
+const LAST_UPDATED = '26 Jun 21:09 UTC';
 const SCORERS_DATA = [
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:5,assists:0},
   {player:'Vinicius Junior',team:'Brazil',owner:'Damir',goals:4,assists:1},
-  {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:4,assists:0},
+  {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:4,assists:2},
   {player:'Erling Haaland',team:'Norway',owner:'Ajit',goals:4,assists:0},
+  {player:'Ousmane Dembélé',team:'France',owner:'Nuno',goals:4,assists:1},
   {player:'Ismael Saibari',team:'Morocco',owner:'James',goals:3,assists:0},
   {player:'Deniz Undav',team:'Germany',owner:'Adam',goals:3,assists:2},
   {player:'Johan Manzambi',team:'Switzerland',owner:'Pritish',goals:3,assists:1},
   {player:'Jonathan David',team:'Canada',owner:'Hugh',goals:3,assists:0},
   {player:'Matheus Cunha',team:'Brazil',owner:'Damir',goals:3,assists:0},
   {player:'Brian Brobbey',team:'Netherlands',owner:'Steve',goals:3,assists:0},
+  {player:'Ismaïla Sarr',team:'Senegal',owner:'Damir',goals:3,assists:1},
   {player:'Julián Quiñones',team:'Mexico',owner:'Mark',goals:2,assists:0},
   {player:'Cyle Larin',team:'Canada',owner:'Hugh',goals:2,assists:0},
   {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:2,assists:0},
@@ -452,9 +454,7 @@ const SCORERS_DATA = [
   {player:'Crysencio Summerville',team:'Netherlands',owner:'Steve',goals:2,assists:1},
   {player:'Daichi Kamada',team:'Japan',owner:'Nuno',goals:2,assists:0},
   {player:'Yasin Ayari',team:'Sweden',owner:'Pardeep',goals:2,assists:0},
-  {player:'Maximiliano Araújo',team:'Uruguay',owner:'Adam',goals:2,assists:1},
-  {player:'Elijah Just',team:'New Zealand',owner:'Quentin',goals:2,assists:0},
-  {player:'Harry Kane',team:'England',owner:'Pritish',goals:2,assists:0}
+  {player:'Maximiliano Araújo',team:'Uruguay',owner:'Adam',goals:2,assists:1}
 ];
 const RESULTS_DATA = {
   'Algeria':{stage:'Group stage exit',gf:2,ga:4},
@@ -475,7 +475,7 @@ const RESULTS_DATA = {
   'Ecuador':{stage:'Group stage exit',gf:2,ga:2},
   'Egypt':{stage:'Group stage exit',gf:4,ga:2},
   'England':{stage:'Group stage exit',gf:4,ga:2},
-  'France':{stage:'Group stage exit',gf:6,ga:1},
+  'France':{stage:'Group stage exit',gf:10,ga:2},
   'Germany':{stage:'Group stage exit',gf:10,ga:4},
   'Ghana':{stage:'Group stage exit',gf:1,ga:0},
   'Haiti':{stage:'Group stage exit',gf:2,ga:8},
@@ -487,7 +487,7 @@ const RESULTS_DATA = {
   'Morocco':{stage:'Group stage exit',gf:6,ga:3},
   'Netherlands':{stage:'Group stage exit',gf:10,ga:4},
   'New Zealand':{stage:'Group stage exit',gf:3,ga:5},
-  'Norway':{stage:'Group stage exit',gf:7,ga:3},
+  'Norway':{stage:'Group stage exit',gf:8,ga:7},
   'Panama':{stage:'Group stage exit',gf:0,ga:2},
   'Paraguay':{stage:'Group stage exit',gf:2,ga:4},
   'Portugal':{stage:'Group stage exit',gf:6,ga:1},
