@@ -303,6 +303,12 @@
     'Haiti'                               : {stage:'Group stage exit', gf:0, ga:0},
   };
 
+  // Fallback scoring datasets used by group-stage framework.
+  // Keep these lightweight defaults so the page always renders even when
+  // external scorer/FIFA feeds are not populated yet.
+  const TEAM_FIFA_POINTS = {};
+  const SCORERS_DATA = [];
+
   // ── LOGIC ─────────────────────────────────────────────────────────────────────
 
   const TEAM_OWNER = {};
@@ -312,6 +318,7 @@
 
   function getResult(t) { return RESULTS_DATA[t] || DEFAULT_R; }
   function getPoints(t) { return POINTS_MAP[getResult(t).stage] ?? 0; }
+  function getTeamFifaPts(team) { return TEAM_FIFA_POINTS[team] ?? 0; }
 
   function sumGoalsForParticipant(p) {
     return p.teams.reduce((s, t) => s + (RESULTS_DATA[t]?.gf || 0), 0);
