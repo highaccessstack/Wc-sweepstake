@@ -635,6 +635,19 @@
     </table></div>`;
   }
 
+  function renderGroupStageWinnerCallout(lb, started) {
+    if (!started || !lb.length) return '';
+    const winner = lb[0];
+    return `<div class="tbl-wrap" style="margin-bottom:18px">
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:14px;color:#334155">
+          <strong>Group Stage Winner:</strong> ${winner.name} (${winner.groupStageScore} pts)
+        </div>
+        <a href="#group-stage-details" style="font-size:12px;font-weight:700;color:#2563eb;text-decoration:none">View full group stage details</a>
+      </div>
+    </div>`;
+  }
+
   function renderInsights(insights, started) {
     if (!started || !insights) {
       return `<div class="ins-grid"><div class="ins-card" style="border-style:dashed">
@@ -715,8 +728,7 @@
       <div id="fix-sec">${renderFixtures(todayStr())}</div>
       <h2 class="sh2">Podium</h2>
       ${renderPodium(lb, started)}
-      <h2 class="sh2">Scoring Framework</h2>
-      ${renderScoringFramework()}
+      ${renderGroupStageWinnerCallout(lb, started)}
       <h2 class="sh2">Leaderboard (group stage + tournament)</h2>
       ${renderLeaderboard(lb, started)}
       <h2 class="sh2">Insights</h2>
@@ -726,6 +738,8 @@
         <button class="shuffle-btn" id="shuf">Shuffle Cards</button>
       </div>
       <div class="cards-grid" id="cgrid">${renderCards(lb, order, started)}</div>
+      <h2 class="sh2" id="group-stage-details">Group Stage Details</h2>
+      ${renderScoringFramework()}
       <p class="footer">Results update via RESULTS_DATA \u00B7 Phase B will connect to live data</p>
     </div>`;
 
