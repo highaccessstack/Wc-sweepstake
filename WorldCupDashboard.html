@@ -279,6 +279,12 @@ const POINTS_MAP = {
   'Final (runner-up)':44,'Champion':54,
 };
 
+const PLACEMENT_POINTS = {
+  1: 1000,
+  2: 600,
+  3: 500,
+};
+
 function calculateDrawSweepstakeScores(assignments,resultsData){
   function teamPts(name){
     const d=resultsData&&resultsData[name];
@@ -517,20 +523,63 @@ function getResult(t){return RESULTS_DATA[t]||DEFAULT_R}
 function getPoints(t){return POINTS_MAP[getResult(t).stage]??0}
 function getPot(t){return TEAM_POTS[t]||4}
 
+function getScorerGoalsByOwner(owner){
+  return SCORERS_DATA
+    .filter(s=>s.owner===owner)
+    .reduce((m,s)=>Math.max(m,s.goals||0),0);
+}
+
 function buildLeaderboard(){
   const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
-  const assignments=PARTICIPANTS.map(p=>({userId:p.name,assignedTeams:p.teams}));
-  const scored=calculateDrawSweepstakeScores(assignments,RESULTS_DATA);
-  const rows=scored.map(u=>{
-    const p=PARTICIPANTS.find(x=>x.name===u.userId);
+  const rows=PARTICIPANTS.map(p=>{
+    const stagePoints=p.teams.reduce((s,t)=>s+getPoints(t),0);
+    const active=p.teams.filter(t=>getResult(t).stage!=='Group stage exit').length;
     const gf=p.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
-    const active=p.teams.filter(t=>(RESULTS_DATA[t]?.stage||'Group stage exit')!=='Group stage exit').length;
-    return{name:u.userId,teams:p.teams,score:u.totalPoints,active,gf};
+    return{
+      name:p.name,
+      teams:p.teams,
+      stagePoints,
+      active,
+      gf,
+    };
   });
-  if(!started)return rows.sort((a,b)=>a.name.localeCompare(b.name)).map((p,i)=>({...p,rank:i+1}));
+
+  if(!started){
+    return rows.sort((a,b)=>a.name.localeCompare(b.name)).map((p,i)=>({
+      ...p,
+      placementBonus:0,
+      tournamentScore:p.stagePoints,
+      score:p.tournamentScore,
+      rank:i+1,
+    }));
+  }
+
+  const tournamentOrder=[...rows].sort((a,b)=>{
+    if(b.stagePoints!==a.stagePoints)return b.stagePoints-a.stagePoints;
+    if(b.active!==a.active)return b.active-a.active;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    return a.name.localeCompare(b.name);
+  });
+
+  let currentRank=0;
+  tournamentOrder.forEach((r,i)=>{
+    if(
+      i===0||
+      r.stagePoints!==tournamentOrder[i-1].stagePoints||
+      r.active!==tournamentOrder[i-1].active||
+      r.gf!==tournamentOrder[i-1].gf
+    ){
+      currentRank=i+1;
+    }
+    r.tournamentRank=currentRank;
+    r.placementBonus=PLACEMENT_POINTS[currentRank]||0;
+    r.tournamentScore=r.stagePoints+r.placementBonus;
+    r.score=r.tournamentScore;
+  });
+
   rows.sort((a,b)=>{
     if(b.score!==a.score)return b.score-a.score;
-    if(b.active!==a.active)return b.active-a.active;
+    if(b.tournamentScore!==a.tournamentScore)return b.tournamentScore-a.tournamentScore;
     if(b.gf!==a.gf)return b.gf-a.gf;
     return a.name.localeCompare(b.name);
   });
@@ -538,7 +587,7 @@ function buildLeaderboard(){
   for(let i=0;i<rows.length;i++){
     if(i===0){result.push({...rows[i],rank:1});continue}
     const prev=result[i-1];
-    const sameRank=prev.score===rows[i].score&&prev.active===rows[i].active;
+    const sameRank=prev.score===rows[i].score&&prev.tournamentScore===rows[i].tournamentScore;
     result.push({...rows[i],rank:sameRank?prev.rank:i+1});
   }
   return result;
@@ -641,21 +690,23 @@ function renderCountdown(){
 }
 
 function renderFixtures(today){
+  const ROUND_OF_32_START='2026-06-30';
+  const knockoutsOnly=FIXTURES.filter(f=>f.d>=ROUND_OF_32_START);
   const tomorrow=new Date(today+'T00:00:00');
   tomorrow.setDate(tomorrow.getDate()+1);
   const tomorrowStr=`${tomorrow.getFullYear()}-${p2(tomorrow.getMonth()+1)}-${p2(tomorrow.getDate())}`;
 
-  let todayFix=FIXTURES.filter(f=>f.d===today);
-  let tomorrowFix=FIXTURES.filter(f=>f.d===tomorrowStr);
+  let todayFix=knockoutsOnly.filter(f=>f.d===today);
+  let tomorrowFix=knockoutsOnly.filter(f=>f.d===tomorrowStr);
 
   // If no matches today, find next day with matches and show that + the day after
   if(!todayFix.length){
-    const upcoming=FIXTURES.filter(f=>f.d>=today).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
-    if(!upcoming.length)return`<div class="fix-empty">No upcoming fixtures.</div>`;
+    const upcoming=knockoutsOnly.filter(f=>f.d>=today).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+    if(!upcoming.length)return`<div class="fix-empty">No Round-of-32 (or later) fixtures loaded yet.</div>`;
     const nextDay=upcoming[0].d;
-    todayFix=FIXTURES.filter(f=>f.d===nextDay);
+    todayFix=knockoutsOnly.filter(f=>f.d===nextDay);
     const afterNext=upcoming.find(f=>f.d>nextDay);
-    tomorrowFix=afterNext?FIXTURES.filter(f=>f.d===afterNext.d):[];
+    tomorrowFix=afterNext?knockoutsOnly.filter(f=>f.d===afterNext.d):[];
   }
 
   function makeCards(fixes,label){
@@ -685,6 +736,8 @@ function renderFixtures(today){
 }
 
 function renderFixtureSchedule(){
+  const ROUND_OF_32_START='2026-06-30';
+  const knockoutsOnly=FIXTURES.filter(f=>f.d>=ROUND_OF_32_START);
   const today=todayStr();
   const cutFuture=new Date(today+'T00:00:00');
   cutFuture.setDate(cutFuture.getDate()+3);
@@ -692,12 +745,12 @@ function renderFixtureSchedule(){
 
   // Group fixtures by date
   const byDate={};
-  FIXTURES.forEach(f=>{
+  knockoutsOnly.forEach(f=>{
     if(!byDate[f.d])byDate[f.d]=[];
     byDate[f.d].push(f);
   });
   const dates=Object.keys(byDate).sort();
-  if(!dates.length)return'<div class="fix-empty">No fixtures loaded.</div>';
+  if(!dates.length)return'<div class="fix-empty">No Round-of-32 (or later) fixtures loaded yet.</div>';
 
   function dayLabel(d){
     if(d===today)return'Today';
@@ -771,16 +824,9 @@ function renderInsights(insights,started){
 }
 
 function renderLeagueTable(lb,started){
-  const STAGE_ORDER=['Group stage exit','Round of 32','Round of 16','Quarterfinals','Semifinals','Final (runner-up)','Champion'];
-  const rows=lb.map(e=>({...e,fifaPts:e.teams.reduce((s,t)=>s+getTeamFifaPts(t),0)}));
-  const groupStage=started&&rows.every(e=>e.score===0);
-  if(groupStage)rows.sort((a,b)=>b.fifaPts-a.fifaPts||b.gf-a.gf);
+  const rows=[...lb];
   const rendered=rows.map((e,i)=>{
-    const pos=groupStage?i+1:e.rank;
-    const bestStage=e.teams.reduce((best,t)=>{
-      const s=RESULTS_DATA[t]?.stage||'Group stage exit';
-      return STAGE_ORDER.indexOf(s)>STAGE_ORDER.indexOf(best)?s:best;
-    },'Group stage exit');
+    const pos=e.rank;
     const isFirst=started&&pos===1;
     const isLast=started&&i===rows.length-1;
     const rowStyle=isFirst?'border-left:3px solid var(--gold);background:rgba(255,215,0,0.06)':
@@ -788,17 +834,15 @@ function renderLeagueTable(lb,started){
                    'border-left:3px solid transparent';
     const posStyle=isFirst?'color:var(--gold)':isLast?'color:#ff6b6b':'';
     const nameStyle=isFirst?'color:var(--gold)':'';
-    const fifaStyle=groupStage&&isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
-    const swStyle=!groupStage&&isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
+    const totalStyle=isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
     const teamTags=e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('');
     return`<tr style="${rowStyle}">
       <td class="lt-pos" style="${posStyle}">${pos}</td>
       <td class="lt-name" style="${nameStyle}">${e.name}</td>
       <td class="lt-teams">${teamTags}</td>
-      <td class="lt-pts" style="${fifaStyle}"${started?` data-target="${e.fifaPts}"`:''} >${started?'0':'—'}</td>
-      <td class="lt-sw">${started?e.score:'—'}</td>
-      <td class="lt-gf">${started?e.gf:'—'}</td>
-      <td class="lt-stage">${started?bestStage:'Pre-tournament'}</td>
+      <td class="lt-pts" style="${totalStyle}">${started?e.score:'—'}</td>
+      <td class="lt-gf">${started?e.tournamentScore:'—'}</td>
+      <td class="lt-stage">${started?e.stagePoints:'—'}</td>
     </tr>`;
   }).join('');
   return`<table class="league-table glass">
@@ -806,10 +850,9 @@ function renderLeagueTable(lb,started){
       <th class="lt-pos">#</th>
       <th class="lt-name">Player</th>
       <th class="lt-teams">Teams</th>
-      <th class="lt-pts" style="text-align:right" title="FIFA pts (W=3 D=1 L=0 across all group matches)">FIFA Pts</th>
-      <th class="lt-sw" style="text-align:right" title="Sweepstake pts (stage advancement)">SW Pts</th>
-      <th class="lt-gf" style="text-align:right">GF</th>
-      <th class="lt-stage">Best Stage</th>
+      <th class="lt-pts" style="text-align:right">Total</th>
+      <th class="lt-gf" style="text-align:right">Tournament</th>
+      <th class="lt-stage" style="text-align:right">Stage pts</th>
     </tr></thead>
     <tbody>${rendered}</tbody>
   </table>`;
@@ -832,21 +875,20 @@ function renderTopScorers(data){
     </div>`).join('')}</div>`;
 }
 
-let order=[],lastDate=todayStr();
+let lastDate=todayStr();
 
 function renderAll(){
   const{done}=timeLeft();
   const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
-  const lb=buildLeaderboard();
+  let lb=buildLeaderboard();
   const insights=calculateInsights(lb);
-  if(!order.length||order.length!==lb.length)order=lb.map((_,i)=>i);
-  order.sort((a,b)=>{
-    const pa=lb[a].teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
-    const pb=lb[b].teams.reduce((s,t)=>s+getTeamFifaPts(t),0);
-    if(pb!==pa)return pb-pa;
-    const ga=lb[a].teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
-    const gb=lb[b].teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
-    return gb-ga;
+  // Knockout-only ordering: use computed leaderboard rank/score directly.
+  lb=[...lb].sort((a,b)=>{
+    if(a.rank!==b.rank)return a.rank-b.rank;
+    if(b.score!==a.score)return b.score-a.score;
+    if(b.stagePoints!==a.stagePoints)return b.stagePoints-a.stagePoints;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    return a.name.localeCompare(b.name);
   });
 
   const logoSrc=`<img src="data:image/png;base64,${FIFA_LOGO_B64}" alt="FIFA">`;
@@ -863,8 +905,8 @@ function renderAll(){
 
 
     <section class="section reveal" id="fix-sec">
-      <div class="sec-label">Schedule</div>
-      <h2 class="sec-title">Fixtures</h2>
+      <div class="sec-label">Knockout Stage</div>
+      <h2 class="sec-title">Round of 32 Onward Fixtures</h2>
       ${renderFixtures(todayStr())}
     </section>
 
@@ -888,20 +930,20 @@ function renderAll(){
 
     <section class="section">
       <div class="sec-label">Standings</div>
-      <h2 class="sec-title">League Table: FIFA Points</h2>
+      <h2 class="sec-title">Leaderboard</h2>
       <div id="cgrid">${renderLeagueTable(lb,started)}</div>
+    </section>
+
+    <section class="section">
+      <div class="sec-label">Knockout Stage</div>
+      <h2 class="sec-title">Round of 32 Onward Schedule</h2>
+      <div id="sched-sec">${renderFixtureSchedule()}</div>
     </section>
 
     <section class="section">
       <div class="sec-label">Who&#39;s Scoring</div>
       <h2 class="sec-title">Golden Boot</h2>
       <div id="gb-sec">${renderTopScorers(SCORERS_DATA)}</div>
-    </section>
-
-    <section class="section">
-      <div class="sec-label">All Matches</div>
-      <h2 class="sec-title">Schedule</h2>
-      <div id="sched-sec">${renderFixtureSchedule()}</div>
     </section>
 
     <footer class="footer">
