@@ -423,23 +423,23 @@ const FIXTURES = [
 ];
 
 const BANTER_FEED = [
-  'Live results in. The leaderboard has been updated. Manage your expectations accordingly.',
+  'Results updated. If your teams are doing well: don\u2019t be smug. If they\u2019re not: condolences.',
   'Golden Boot leader: Lionel Messi (Argentina (Hugh\u2019s pick)) with 6 goals. That\u2019s what we\u2019re here for.',
   'Pritish\u2019s England have Harry Kane on 3 goals. That\u2019s doing the business.',
-  'Steve\u2019s DR Congo have Yoane Wissa on 3 goals. Making the sweepstake worth watching.',
-  'Damir\u2019s Brazil have Vinicius Junior on 4 goals. Value pick.',
-  'Hugh\u2019s Argentina have Lionel Messi on 6 goals. Value pick.',
-  'Adam\u2019s Germany have Deniz Undav on 3 goals. Not bad at all.',
-  'James\u2019s Morocco have Ismael Saibari on 3 goals. Value pick.',
-  'Pardeep\u2019s teams haven\u2019t troubled the scorers chart yet. The drought is real.',
-  'Ajit\u2019s Norway have Erling Haaland on 4 goals. That\u2019s doing the business.',
-  'Nuno\u2019s France have Kylian Mbappé on 4 goals. Not bad at all.',
-  'Quentin\u2019s New Zealand have Elijah Just on 3 goals. That\u2019s doing the business.',
-  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Defending is a skill too. Allegedly.',
-  'Mark\u2019s Mexico have Julián Quiñones on 2 goals. Making the sweepstake worth watching.',
+  'Steve\u2019s DR Congo have Yoane Wissa on 3 goals. Not bad at all.',
+  'Damir\u2019s Brazil have Vinicius Junior on 4 goals. The return on investment is very real.',
+  'Hugh\u2019s Argentina have Lionel Messi on 6 goals. That\u2019s doing the business.',
+  'Adam\u2019s Germany have Kai Havertz on 3 goals. Not bad at all.',
+  'James\u2019s Morocco have Ismael Saibari on 3 goals. That\u2019s doing the business.',
+  'Pardeep\u2019s teams haven\u2019t troubled the scorers chart yet. Defending is a skill too. Allegedly.',
+  'Ajit\u2019s Norway have Erling Haaland on 4 goals. Not bad at all.',
+  'Nuno\u2019s France have Kylian Mbappé on 4 goals. That\u2019s doing the business.',
+  'Quentin\u2019s New Zealand have Elijah Just on 3 goals. The return on investment is very real.',
+  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Consistent, if nothing else.',
+  'Mark\u2019s Mexico have Julián Quiñones on 2 goals. Value pick.',
   'Bottom of the table: Mark on 0 points. The floor is lava and Mark is standing in it.'
 ];
-const LAST_UPDATED = '29 Jun 21:13 UTC';
+const LAST_UPDATED = '30 Jun 11:26 UTC';
 const SCORERS_DATA = [
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:6,assists:0},
   {player:'Vinicius Junior',team:'Brazil',owner:'Damir',goals:4,assists:1},
@@ -447,6 +447,7 @@ const SCORERS_DATA = [
   {player:'Erling Haaland',team:'Norway',owner:'Ajit',goals:4,assists:0},
   {player:'Ousmane Dembélé',team:'France',owner:'Nuno',goals:4,assists:1},
   {player:'Ismael Saibari',team:'Morocco',owner:'James',goals:3,assists:0},
+  {player:'Kai Havertz',team:'Germany',owner:'Adam',goals:3,assists:0},
   {player:'Deniz Undav',team:'Germany',owner:'Adam',goals:3,assists:2},
   {player:'Elijah Just',team:'New Zealand',owner:'Quentin',goals:3,assists:0},
   {player:'Yoane Wissa',team:'DR Congo',owner:'Steve',goals:3,assists:0},
@@ -455,12 +456,11 @@ const SCORERS_DATA = [
   {player:'Jonathan David',team:'Canada',owner:'Hugh',goals:3,assists:0},
   {player:'Matheus Cunha',team:'Brazil',owner:'Damir',goals:3,assists:0},
   {player:'Brian Brobbey',team:'Netherlands',owner:'Steve',goals:3,assists:0},
+  {player:'Cody Gakpo',team:'Netherlands',owner:'Steve',goals:3,assists:1},
   {player:'Ismaïla Sarr',team:'Senegal',owner:'Damir',goals:3,assists:1},
   {player:'Julián Quiñones',team:'Mexico',owner:'Mark',goals:2,assists:0},
   {player:'Cyle Larin',team:'Canada',owner:'Hugh',goals:2,assists:0},
-  {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:2,assists:0},
-  {player:'Kai Havertz',team:'Germany',owner:'Adam',goals:2,assists:0},
-  {player:'Crysencio Summerville',team:'Netherlands',owner:'Steve',goals:2,assists:1}
+  {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:2,assists:0}
 ];
 const RESULTS_DATA = {
   'Algeria':{stage:'Group stage exit',gf:5,ga:7},
@@ -482,7 +482,7 @@ const RESULTS_DATA = {
   'Egypt':{stage:'Group stage exit',gf:5,ga:3},
   'England':{stage:'Group stage exit',gf:6,ga:2},
   'France':{stage:'Group stage exit',gf:10,ga:2},
-  'Germany':{stage:'Group stage exit',gf:10,ga:4},
+  'Germany':{stage:'Group stage exit',gf:14,ga:9},
   'Ghana':{stage:'Group stage exit',gf:2,ga:2},
   'Haiti':{stage:'Group stage exit',gf:2,ga:8},
   'Iran':{stage:'Group stage exit',gf:3,ga:3},
@@ -490,12 +490,12 @@ const RESULTS_DATA = {
   'Japan':{stage:'Group stage exit',gf:8,ga:5},
   'Jordan':{stage:'Group stage exit',gf:3,ga:8},
   'Mexico':{stage:'Group stage exit',gf:6,ga:0},
-  'Morocco':{stage:'Group stage exit',gf:6,ga:3},
-  'Netherlands':{stage:'Group stage exit',gf:10,ga:4},
+  'Morocco':{stage:'Group stage exit',gf:10,ga:6},
+  'Netherlands':{stage:'Group stage exit',gf:13,ga:8},
   'New Zealand':{stage:'Group stage exit',gf:4,ga:10},
   'Norway':{stage:'Group stage exit',gf:8,ga:7},
   'Panama':{stage:'Group stage exit',gf:0,ga:4},
-  'Paraguay':{stage:'Group stage exit',gf:2,ga:4},
+  'Paraguay':{stage:'Group stage exit',gf:7,ga:8},
   'Portugal':{stage:'Group stage exit',gf:6,ga:1},
   'Qatar':{stage:'Group stage exit',gf:2,ga:10},
   'Saudi Arabia':{stage:'Group stage exit',gf:1,ga:5},
