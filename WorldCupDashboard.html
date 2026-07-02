@@ -158,6 +158,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .lt-gf{text-align:right;padding:14px 12px;color:var(--text-dim);font-size:13px}
 .lt-sw{text-align:right;padding:14px 12px;color:var(--muted);font-size:13px}
 .lt-stage{padding:14px 12px;color:var(--muted);font-size:12px}
+.table-legend{margin:0 0 10px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.02);font-size:11px;color:var(--muted);line-height:1.5}
+.table-legend strong{color:var(--text)}
 @media(max-width:600px){.lt-stage,.lt-gf,.lt-sw{display:none}}
 
 /* ── Golden Boot ── */
@@ -833,7 +835,8 @@ function renderLeagueTable(lb,started){
       <td class="lt-stage">${started?e.stagePoints:'—'}</td>
     </tr>`;
   }).join('');
-  return`<table class="league-table glass">
+  return`<div class="table-legend"><strong>Scoring:</strong> Group exit 0, R32 2, R16 4, QF 6, SF 10, Runner-up 15, Champion 25.</div>
+  <table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">#</th>
       <th class="lt-name">Player</th>
@@ -947,7 +950,8 @@ function renderGroupStageFinalScoreboard(){
     <td class="lt-stage">${e.leastConcededByTeam}</td>
     <td class="lt-stage">${e.groupPts}</td>
   </tr>`).join('');
-  return`<table class="league-table glass">
+  return`<div class="table-legend"><strong>Group Stage Method:</strong> Highest FIFA Points +600, Highest Individual Scorer +300, Least Team GA +300, Least Total Points +300.</div>
+  <table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">Rank</th>
       <th class="lt-name">Player</th>
