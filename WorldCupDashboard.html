@@ -519,7 +519,7 @@ function getScorerGoalsByOwner(owner){
 }
 
 function buildLeaderboard(){
-  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
+  const knockoutsStarted=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
   const rows=PARTICIPANTS.map(p=>{
     const stagePoints=p.teams.reduce((s,t)=>s+getPoints(t),0);
     const active=p.teams.filter(t=>getResult(t).stage!=='Group stage exit').length;
@@ -533,7 +533,8 @@ function buildLeaderboard(){
     };
   });
 
-  if(!started){
+  // Do not rank on group-stage activity. Rankings begin at knockout stage only.
+  if(!knockoutsStarted){
     return rows.sort((a,b)=>a.name.localeCompare(b.name)).map((p,i)=>({
       ...p,
       placementBonus:0,
@@ -546,7 +547,6 @@ function buildLeaderboard(){
   const tournamentOrder=[...rows].sort((a,b)=>{
     if(b.stagePoints!==a.stagePoints)return b.stagePoints-a.stagePoints;
     if(b.active!==a.active)return b.active-a.active;
-    if(b.gf!==a.gf)return b.gf-a.gf;
     return a.name.localeCompare(b.name);
   });
 
@@ -555,8 +555,7 @@ function buildLeaderboard(){
     if(
       i===0||
       r.stagePoints!==tournamentOrder[i-1].stagePoints||
-      r.active!==tournamentOrder[i-1].active||
-      r.gf!==tournamentOrder[i-1].gf
+      r.active!==tournamentOrder[i-1].active
     ){
       currentRank=i+1;
     }
@@ -569,14 +568,13 @@ function buildLeaderboard(){
   rows.sort((a,b)=>{
     if(b.score!==a.score)return b.score-a.score;
     if(b.tournamentScore!==a.tournamentScore)return b.tournamentScore-a.tournamentScore;
-    if(b.gf!==a.gf)return b.gf-a.gf;
     return a.name.localeCompare(b.name);
   });
   const result=[];
   for(let i=0;i<rows.length;i++){
     if(i===0){result.push({...rows[i],rank:1});continue}
     const prev=result[i-1];
-    const sameRank=prev.score===rows[i].score&&prev.tournamentScore===rows[i].tournamentScore;
+    const sameRank=prev.score===rows[i].score;
     result.push({...rows[i],rank:sameRank?prev.rank:i+1});
   }
   return result;
@@ -847,6 +845,27 @@ function renderLeagueTable(lb,started){
   </table>`;
 }
 
+function renderFinalRankingsTable(lb,started){
+  const rows=[...lb];
+  const rendered=rows.map(e=>`<tr>
+    <td class="lt-pos">${e.rank}</td>
+    <td class="lt-name">${e.name}</td>
+    <td class="lt-pts">${started?e.score:'—'}</td>
+    <td class="lt-stage">${started?e.stagePoints:'—'}</td>
+    <td class="lt-gf">${started?e.active:'—'}</td>
+  </tr>`).join('');
+  return`<table class="league-table glass">
+    <thead><tr>
+      <th class="lt-pos">Rank</th>
+      <th class="lt-name">Player</th>
+      <th class="lt-pts" style="text-align:right">Total</th>
+      <th class="lt-stage" style="text-align:right">Stage pts</th>
+      <th class="lt-gf" style="text-align:right">Active teams</th>
+    </tr></thead>
+    <tbody>${rendered}</tbody>
+  </table>`;
+}
+
 /* ═══════════════════════════════════════════
    MOUNT
 ═══════════════════════════════════════════ */
@@ -868,7 +887,7 @@ let lastDate=todayStr();
 
 function renderAll(){
   const{done}=timeLeft();
-  const started=Object.values(RESULTS_DATA).some(r=>r.gf>0||r.ga>0);
+  const knockoutsStarted=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
   let lb=buildLeaderboard();
   const insights=calculateInsights(lb);
   // Knockout-only ordering: use computed leaderboard rank/score directly.
@@ -906,12 +925,6 @@ function renderAll(){
     </section>
 
     <section class="section">
-      <div class="sec-label">Standings</div>
-      <h2 class="sec-title">Leaderboard</h2>
-      <div id="cgrid">${renderLeagueTable(lb,started)}</div>
-    </section>
-
-    <section class="section">
       <div class="sec-label">Knockout Stage</div>
       <h2 class="sec-title">Round of 32 Onward Schedule</h2>
       <div id="sched-sec">${renderFixtureSchedule()}</div>
@@ -921,6 +934,12 @@ function renderAll(){
       <div class="sec-label">Who&#39;s Scoring</div>
       <h2 class="sec-title">Golden Boot</h2>
       <div id="gb-sec">${renderTopScorers(SCORERS_DATA)}</div>
+    </section>
+
+    <section class="section">
+      <div class="sec-label">Standings</div>
+      <h2 class="sec-title">Final Rankings Summary</h2>
+      <div id="cgrid">${renderFinalRankingsTable(lb,knockoutsStarted)}</div>
     </section>
 
     <footer class="footer">
