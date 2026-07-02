@@ -160,6 +160,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .lt-stage{padding:14px 12px;color:var(--muted);font-size:12px}
 .table-legend{margin:0 0 10px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.02);font-size:11px;color:var(--muted);line-height:1.5}
 .table-legend strong{color:var(--text)}
+.mobile-rotate-hint{display:none;margin:0 0 10px;padding:8px 10px;border:1px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.02);font-size:11px;color:var(--muted);text-align:center}
+@media(max-width:900px) and (orientation:portrait){.mobile-rotate-hint{display:block}}
 @media(max-width:600px){.lt-stage,.lt-gf,.lt-sw{display:none}}
 
 /* ── Golden Boot ── */
@@ -977,6 +979,7 @@ function renderGroupStageFinalScoreboard(){
   }).join('');
 
   return`<div class="table-legend"><strong>Group Stage Method:</strong> Highest FIFA Points +600, Highest individual goal scorer +300, Least goals conceded by team +300, Least total points +300. Tiebreaker: higher total GF.</div>
+  <div class="mobile-rotate-hint">&#x1F4F1; &#x21BB; Rotate to landscape for full scoreboard details</div>
   <table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">Rank</th>
