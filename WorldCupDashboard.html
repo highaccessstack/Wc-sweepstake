@@ -161,6 +161,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .lt-gf{text-align:right;padding:14px 12px;color:var(--text-dim);font-size:13px}
 .lt-sw{text-align:right;padding:14px 12px;color:var(--muted);font-size:13px}
 .lt-stage{padding:14px 12px;color:var(--muted);font-size:12px}
+.lt-detail{padding:10px 12px;color:var(--muted);font-size:10.5px;line-height:1.4;min-width:320px}
 .table-legend{margin:0 0 10px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.02);font-size:11px;color:var(--muted);line-height:1.5}
 .table-legend strong{color:var(--text)}
 .mobile-rotate-hint{display:none;margin:0 0 10px;padding:8px 10px;border:1px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.02);font-size:11px;color:var(--muted);text-align:center}
@@ -950,52 +951,69 @@ function getTeamGroupStageConceded(team){
   return ga;
 }
 
+function getTeamGroupStageMatchDetails(team){
+  const out=[];
+  FIXTURES.forEach(f=>{
+    if(!isGroupStageFixture(f))return;
+    if(f.hg===undefined||f.ag===undefined)return;
+    if(f.home===team)out.push(`vs ${f.away} (${f.hg}-${f.ag})`);
+    else if(f.away===team)out.push(`vs ${f.home} (${f.ag}-${f.hg})`);
+  });
+  return out;
+}
+
 function renderGroupStageFinalScoreboard(){
-  const finalRows=[
-    {rank:1,name:'Nuno',teams:[['France',9],['Japan',5],['Algeria',4],['Czechia',2]],total:20,gf:25,ga:19,gd:'+6'},
-    {rank:2,name:'Pardeep',teams:[['Portugal',5],['Ecuador',4],['Cote d\'Ivoire',6],['Sweden',5]],total:20,gf:20,ga:14,gd:'+6'},
-    {rank:3,name:'Hugh',teams:[['Argentina',9],['Canada',4],['Scotland',3],['Turkiye',3]],total:20,gf:17,ga:12,gd:'+5'},
-    {rank:4,name:'Ajit',teams:[['Spain',7],['Austria',4],['Norway',6],['Cape Verde',3]],total:20,gf:19,ga:15,gd:'+4'},
-    {rank:5,name:'Damir',teams:[['Brazil',7],['Senegal',3],['Paraguay',4],['Ghana',4]],total:18,gf:17,ga:11,gd:'+6'},
-    {rank:6,name:'Nomso',teams:[['Croatia',6],['South Korea',3],['South Africa',4],['Bosnia and Herzegovina',4]],total:17,gf:11,ga:15,gd:'-4'},
-    {rank:7,name:'Mark',teams:[['Belgium',5],['Mexico',9],['Saudi Arabia',2],['Haiti',0]],total:16,gf:15,ga:13,gd:'+2'},
-    {rank:8,name:'Steve',teams:[['Netherlands',7],['Australia',4],['Qatar',1],['DR Congo',4]],total:16,gf:16,ga:15,gd:'+1'},
-    {rank:9,name:'Adam',teams:[['Germany',6],['Uruguay',2],['Egypt',5],['Curacao',1]],total:14,gf:19,ga:17,gd:'+2'},
-    {rank:10,name:'Quentin',teams:[['Colombia',7],['USA',6],['Tunisia',0],['New Zealand',1]],total:14,gf:14,ga:21,gd:'-7'},
-    {rank:11,name:'Pritish',teams:[['England',7],['Switzerland',7],['Panama',0],['Iraq',0]],total:14,gf:14,ga:22,gd:'-8'},
-    {rank:12,name:'James',teams:[['Morocco',7],['Iran',3],['Uzbekistan',0],['Jordan',0]],total:10,gf:11,ga:24,gd:'-13'},
-  ];
+  const rows=PARTICIPANTS.map(p=>{
+    const teamStats=p.teams.map(team=>({
+      team,
+      pts:getTeamGroupStagePts(team),
+      gf:getTeamGroupStageGoals(team),
+      ga:getTeamGroupStageConceded(team),
+      details:getTeamGroupStageMatchDetails(team),
+    }));
+    return{
+      name:p.name,
+      teamStats,
+      fifaPoints:teamStats.reduce((s,t)=>s+t.pts,0),
+      totalGoals:teamStats.reduce((s,t)=>s+t.gf,0),
+      conceded:teamStats.reduce((s,t)=>s+t.ga,0),
+      topCountryGoals:Math.max(...teamStats.map(t=>t.gf)),
+      leastCountryConceded:Math.min(...teamStats.map(t=>t.ga)),
+    };
+  });
 
-  const fifaWinner=[...finalRows].sort((a,b)=>{
-    if(b.total!==a.total)return b.total-a.total;
-    if(b.gf!==a.gf)return b.gf-a.gf;
-    if(a.ga!==b.ga)return a.ga-b.ga;
+  rows.sort((a,b)=>{
+    if(b.fifaPoints!==a.fifaPoints)return b.fifaPoints-a.fifaPoints;
+    if(b.totalGoals!==a.totalGoals)return b.totalGoals-a.totalGoals;
+    if(a.conceded!==b.conceded)return a.conceded-b.conceded;
     return a.name.localeCompare(b.name);
-  })[0]?.name;
-  const maxScorer=Math.max(...finalRows.map(r=>getScorerGoalsByOwner(r.name)));
-  const minGa=Math.min(...finalRows.map(r=>r.ga));
-  const minFifaPts=Math.min(...finalRows.map(r=>r.total));
+  });
 
-  const rendered=finalRows.map(entry=>{
+  const fifaWinner=rows[0]?rows[0].name:null;
+  const maxTopCountryGoals=Math.max(...rows.map(r=>r.topCountryGoals));
+  const minLeastCountryConceded=Math.min(...rows.map(r=>r.leastCountryConceded));
+  const minFifaPoints=Math.min(...rows.map(r=>r.fifaPoints));
+
+  const rendered=rows.map((entry,idx)=>{
     const groupStageScore=
       (entry.name===fifaWinner?600:0)+
-      (getScorerGoalsByOwner(entry.name)===maxScorer?300:0)+
-      (entry.ga===minGa?300:0)+
-      (entry.total===minFifaPts?300:0);
-    const teamCells=entry.teams.map(t=>`<td class="lt-stage">${t[0]} (${t[1]})</td>`).join('');
+      (entry.topCountryGoals===maxTopCountryGoals?300:0)+
+      (entry.leastCountryConceded===minLeastCountryConceded?300:0)+
+      (entry.fifaPoints===minFifaPoints?300:0);
+    const teamCells=entry.teamStats.map(t=>`<td class="lt-stage">${t.team} (${t.pts})</td>`).join('');
+    const detailText=entry.teamStats.map(t=>`${t.team}: ${t.details.join(' · ')}`).join(' | ');
     return `<tr>
-      <td class="lt-pos">${entry.rank}</td>
+      <td class="lt-pos">${idx+1}</td>
       <td class="lt-name">${entry.name}</td>
       ${teamCells}
-      <td class="lt-pts">${entry.total}</td>
+      <td class="lt-pts">${entry.fifaPoints}</td>
       <td class="lt-gf">${groupStageScore}</td>
-      <td class="lt-gf">${entry.gf}</td>
-      <td class="lt-gf">${entry.ga}</td>
-      <td class="lt-gf">${entry.gd}</td>
+      <td class="lt-gf">${entry.conceded}</td>
+      <td class="lt-detail">${detailText}</td>
     </tr>`;
   }).join('');
 
-  return`<div class="table-legend"><strong>Group Stage Method:</strong> Highest FIFA Points +600, Highest individual goal scorer +300, Least goals conceded by team +300, Least total points +300. Tiebreaker: higher total GF.</div>
+  return`<div class="table-legend"><strong>Group Stage Method:</strong> Highest FIFA Points +600 (single winner via points then goals scored), Highest goal-scoring country +300, Least goals conceded country +300, Least total FIFA Points +300.</div>
   <div class="mobile-rotate-hint">&#x1F4F1; &#x21BB; Rotate to landscape for full scoreboard details</div>
   <table class="league-table glass">
     <thead><tr>
@@ -1007,9 +1025,8 @@ function renderGroupStageFinalScoreboard(){
       <th class="lt-stage">Team 4 (Pts)</th>
       <th class="lt-pts" style="text-align:right">FIFA Points</th>
       <th class="lt-gf" style="text-align:right">Group Stage</th>
-      <th class="lt-gf" style="text-align:right">GF</th>
-      <th class="lt-gf" style="text-align:right">GA</th>
-      <th class="lt-gf" style="text-align:right">GD</th>
+      <th class="lt-gf" style="text-align:right">Conceded</th>
+      <th class="lt-detail">Group Match Results</th>
     </tr></thead>
     <tbody>${rendered}</tbody>
   </table>`;
