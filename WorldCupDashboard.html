@@ -197,25 +197,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
   .podium-block{transition:none}
 }
 
-/* ── Banter Feed ── */
-.banter-wrap{padding:36px 64px 28px;position:relative;border-left:3px solid var(--neon);
-  min-height:130px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
-.bt-open-quote{position:absolute;top:8px;left:18px;font-size:80px;line-height:1;
-  color:var(--neon);opacity:0.15;font-family:Georgia,serif;pointer-events:none;user-select:none}
-.bt-text{font-size:20px;font-style:italic;font-weight:500;color:var(--text);line-height:1.55;
-  transition:opacity .35s ease;min-height:2.5em;z-index:1}
-.bt-footer{display:flex;justify-content:flex-end;margin-top:16px}
-.bt-count{font-size:11px;color:var(--muted);letter-spacing:1px}
-.bt-arrow{position:absolute;top:50%;transform:translateY(-50%);
-  background:var(--surface-hi);border:1px solid var(--border);color:var(--text);
-  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;
-  display:flex;align-items:center;justify-content:center;z-index:2;
-  transition:border-color .2s,box-shadow .2s;backdrop-filter:blur(10px);line-height:1}
-.bt-arrow:hover{border-color:var(--neon);box-shadow:0 0 12px var(--neon-glow)}
-.bt-arrow-l{left:12px}.bt-arrow-r{right:12px}
-.bt-pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--neon);
-  margin-right:6px;animation:pulse 1.2s ease-in-out infinite;vertical-align:middle}
-
 /* ── Office Duels ── */
 #h2h-match-grid{
   display:grid;
@@ -916,18 +897,6 @@ function renderAll(){
       <div class="sec-label">Knockout Stage</div>
       <h2 class="sec-title">Round of 32 Onward Fixtures</h2>
       ${renderFixtures(todayStr())}
-    </section>
-
-    <section class="section reveal" id="banter-sec">
-      <div class="sec-label"><span class="bt-pulse-dot"></span>Live Commentary</div>
-      <h2 class="sec-title">Clippy's Banter</h2>
-      <div class="glass banter-wrap">
-        <div class="bt-open-quote">"</div>
-        <button class="bt-arrow bt-arrow-l" onclick="banterGoTo((_banterIdx-1+_banterLines.length)%_banterLines.length)" aria-label="Previous">&#8249;</button>
-        <div id="banter-text" class="bt-text"></div>
-        <button class="bt-arrow bt-arrow-r" onclick="banterGoTo((_banterIdx+1)%_banterLines.length)" aria-label="Next">&#8250;</button>
-        <div class="bt-footer"><span id="banter-count" class="bt-count"></span></div>
-      </div>
     </section>
 
     <section class="section reveal" id="h2h-sec">
