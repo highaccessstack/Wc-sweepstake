@@ -154,6 +154,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 .lt-name{font-size:15px;font-weight:800;padding:14px 12px;white-space:nowrap}
 .lt-teams{padding:10px 12px}
 .lt-team{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;background:var(--neon-dim);color:var(--neon);margin:2px 2px 2px 0;white-space:nowrap}
+.lt-team-out{opacity:.5;text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:rgba(232,240,254,.55)}
 .lt-pts{text-align:right;font-size:22px;font-weight:900;color:var(--neon);text-shadow:0 0 15px var(--neon-glow);padding:14px 16px;white-space:nowrap}
 .lt-gf{text-align:right;padding:14px 12px;color:var(--text-dim);font-size:13px}
 .lt-sw{text-align:right;padding:14px 12px;color:var(--muted);font-size:13px}
@@ -862,6 +863,26 @@ function renderInsights(insights,started){
 }
 
 function renderLeagueTable(lb,started){
+  const koTallies={};
+  PARTICIPANTS.forEach(p=>p.teams.forEach(t=>{koTallies[t]={wins:0,losses:0};}));
+  getKoPlayedFixtures().forEach(f=>{
+    const homeWin=f.hg>f.ag;
+    const winner=homeWin?f.home:f.away;
+    const loser=homeWin?f.away:f.home;
+    if(koTallies[winner])koTallies[winner].wins+=1;
+    if(koTallies[loser])koTallies[loser].losses+=1;
+  });
+  const hasKoData=getKoPlayedFixtures().length>0;
+
+  function isKnockedOut(team){
+    const stage=(RESULTS_DATA[team]&&RESULTS_DATA[team].stage)||'Group stage exit';
+    if(!hasKoData)return stage==='Group stage exit';
+    const rec=koTallies[team]||{wins:0,losses:0};
+    if(rec.losses>0)return true;
+    if(rec.wins>0)return false;
+    return stage==='Group stage exit';
+  }
+
   const rows=[...lb];
   const rendered=rows.map((e,i)=>{
     const pos=e.rank;
@@ -873,7 +894,7 @@ function renderLeagueTable(lb,started){
     const posStyle=isFirst?'color:var(--gold)':isLast?'color:#ff6b6b':'';
     const nameStyle=isFirst?'color:var(--gold)':'';
     const totalStyle=isFirst?'color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4)':'';
-    const teamTags=e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('');
+    const teamTags=e.teams.map(t=>`<span class="lt-team${isKnockedOut(t)?' lt-team-out':''}">${t}</span>`).join('');
     return`<tr style="${rowStyle}">
       <td class="lt-pos" style="${posStyle}">${pos}</td>
       <td class="lt-name" style="${nameStyle}">${e.name}</td>
