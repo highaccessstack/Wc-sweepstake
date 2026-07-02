@@ -255,15 +255,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple
 
 const POINTS_MAP = {
   'Group stage exit':0,'Group stage':0,
-  'Round of 32':5,'Round of 16':9,
-  'Quarterfinals':17,'Semifinals':29,
-  'Final (runner-up)':44,'Champion':54,
+  'Round of 32':2,'Round of 16':4,
+  'Quarterfinals':6,'Semifinals':10,
+  'Final (runner-up)':15,'Champion':25,
 };
 
-const PLACEMENT_POINTS = {
-  1: 1000,
-  2: 600,
-  3: 500,
+const GROUP_STAGE_BONUS = {
+  highestFifaPoints: 600,
+  topIndividualScorer: 300,
+  leastGoalsConcededByTeam: 300,
+  leastTotalPoints: 300,
 };
 
 function calculateDrawSweepstakeScores(assignments,resultsData){
@@ -560,9 +561,9 @@ function buildLeaderboard(){
       currentRank=i+1;
     }
     r.tournamentRank=currentRank;
-    r.placementBonus=PLACEMENT_POINTS[currentRank]||0;
-    r.tournamentScore=r.stagePoints+r.placementBonus;
-    r.score=r.tournamentScore;
+    r.placementBonus=0;
+    r.tournamentScore=r.stagePoints;
+    r.score=r.stagePoints;
   });
 
   rows.sort((a,b)=>{
@@ -872,21 +873,60 @@ function getTeamGroupStageGoals(team){
   return gf;
 }
 
+function getTeamGroupStageConceded(team){
+  let ga=0;
+  FIXTURES.forEach(f=>{
+    if(!isGroupStageFixture(f))return;
+    if(f.hg===undefined||f.ag===undefined)return;
+    if(f.home===team)ga+=f.ag;
+    else if(f.away===team)ga+=f.hg;
+  });
+  return ga;
+}
+
 function renderGroupStageFinalScoreboard(){
   const rows=PARTICIPANTS.map(p=>{
     const groupPts=p.teams.reduce((s,t)=>s+getTeamGroupStagePts(t),0);
     const groupGf=p.teams.reduce((s,t)=>s+getTeamGroupStageGoals(t),0);
+    const groupFifaPts=groupPts;
+    const topScorerGoals=getScorerGoalsByOwner(p.name);
+    const leastConcededByTeam=p.teams.reduce((m,t)=>Math.min(m,getTeamGroupStageConceded(t)),Infinity);
     return {
       name:p.name,
       teams:p.teams,
-      score:groupPts,
+      groupPts,
+      groupGf,
+      groupFifaPts,
+      topScorerGoals,
+      leastConcededByTeam:leastConcededByTeam===Infinity?0:leastConcededByTeam,
+      bonusFifa:0,
+      bonusScorer:0,
+      bonusLeastConceded:0,
+      bonusLeastTotalPoints:0,
+      score:0,
       gf:groupGf,
     };
   });
 
+  const maxFifa=Math.max(...rows.map(r=>r.groupFifaPts));
+  const maxScorer=Math.max(...rows.map(r=>r.topScorerGoals));
+  const minConceded=Math.min(...rows.map(r=>r.leastConcededByTeam));
+  const minTotalPts=Math.min(...rows.map(r=>r.groupPts));
+
+  rows.forEach(r=>{
+    if(r.groupFifaPts===maxFifa)r.bonusFifa=GROUP_STAGE_BONUS.highestFifaPoints;
+    if(r.topScorerGoals===maxScorer)r.bonusScorer=GROUP_STAGE_BONUS.topIndividualScorer;
+    if(r.leastConcededByTeam===minConceded)r.bonusLeastConceded=GROUP_STAGE_BONUS.leastGoalsConcededByTeam;
+    if(r.groupPts===minTotalPts)r.bonusLeastTotalPoints=GROUP_STAGE_BONUS.leastTotalPoints;
+    r.score=r.bonusFifa+r.bonusScorer+r.bonusLeastConceded+r.bonusLeastTotalPoints;
+  });
+
   rows.sort((a,b)=>{
     if(b.score!==a.score)return b.score-a.score;
-    if(b.gf!==a.gf)return b.gf-a.gf;
+    if(b.groupFifaPts!==a.groupFifaPts)return b.groupFifaPts-a.groupFifaPts;
+    if(b.topScorerGoals!==a.topScorerGoals)return b.topScorerGoals-a.topScorerGoals;
+    if(a.leastConcededByTeam!==b.leastConcededByTeam)return a.leastConcededByTeam-b.leastConcededByTeam;
+    if(a.groupPts!==b.groupPts)return a.groupPts-b.groupPts;
     return a.name.localeCompare(b.name);
   });
 
@@ -901,17 +941,21 @@ function renderGroupStageFinalScoreboard(){
   const rendered=ranked.map(e=>`<tr>
     <td class="lt-pos">${e.rank}</td>
     <td class="lt-name">${e.name}</td>
-    <td class="lt-teams">${e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('')}</td>
     <td class="lt-pts">${e.score}</td>
-    <td class="lt-gf">${e.gf}</td>
+    <td class="lt-gf">${e.groupFifaPts}</td>
+    <td class="lt-stage">${e.topScorerGoals}</td>
+    <td class="lt-stage">${e.leastConcededByTeam}</td>
+    <td class="lt-stage">${e.groupPts}</td>
   </tr>`).join('');
   return`<table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">Rank</th>
       <th class="lt-name">Player</th>
-      <th class="lt-teams">Teams</th>
-      <th class="lt-pts" style="text-align:right">Group pts</th>
-      <th class="lt-gf" style="text-align:right">Group GF</th>
+      <th class="lt-pts" style="text-align:right">Score</th>
+      <th class="lt-gf" style="text-align:right">FIFA Pts (max 600)</th>
+      <th class="lt-stage" style="text-align:right">Top Scorer (max 300)</th>
+      <th class="lt-stage" style="text-align:right">Least Team GA (max 300)</th>
+      <th class="lt-stage" style="text-align:right">Least Total Pts (max 300)</th>
     </tr></thead>
     <tbody>${rendered}</tbody>
   </table>`;
@@ -977,7 +1021,7 @@ function renderAll(){
 
     <section class="section">
       <div class="sec-label">Standings</div>
-      <h2 class="sec-title">Knockout Leaderboard</h2>
+      <h2 class="sec-title">Tournament Leaderboard</h2>
       <div id="ko-leaderboard">${renderLeagueTable(lb,knockoutsStarted)}</div>
     </section>
 
