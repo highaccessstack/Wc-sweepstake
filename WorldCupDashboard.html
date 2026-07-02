@@ -528,53 +528,53 @@ function getKoPlayedFixtures(){
   return FIXTURES.filter(f=>f.group==='KO'&&f.hg!==undefined&&f.ag!==undefined&&f.hg!==f.ag);
 }
 
-function inferKoStageByWinsAndLosses(wins,losses){
-  if(losses>0){
-    const byWins=['Round of 32','Round of 16','Quarterfinals','Semifinals','Final (runner-up)'];
-    return byWins[Math.min(wins,byWins.length-1)];
-  }
-  if(wins<=0)return 'Group stage exit';
-  const activeByWins=['Group stage exit','Round of 16','Quarterfinals','Semifinals','Final (runner-up)','Champion'];
-  return activeByWins[Math.min(wins,activeByWins.length-1)];
-}
+function buildKoTeamStatus(){
+  const status={};
+  PARTICIPANTS.forEach(p=>p.teams.forEach(t=>{status[t]={wins:0,losses:0,hasKoFixture:false};}));
 
-function buildFixtureDerivedKoStages(){
-  const tally={};
-  PARTICIPANTS.forEach(p=>p.teams.forEach(t=>{tally[t]={wins:0,losses:0};}));
-  getKoPlayedFixtures().forEach(f=>{
+  FIXTURES.forEach(f=>{
+    if(f.group!=='KO')return;
+    if(status[f.home])status[f.home].hasKoFixture=true;
+    if(status[f.away])status[f.away].hasKoFixture=true;
+    if(f.hg===undefined||f.ag===undefined||f.hg===f.ag)return;
     const homeWin=f.hg>f.ag;
     const winner=homeWin?f.home:f.away;
     const loser=homeWin?f.away:f.home;
-    if(tally[winner])tally[winner].wins+=1;
-    if(tally[loser])tally[loser].losses+=1;
+    if(status[winner])status[winner].wins+=1;
+    if(status[loser])status[loser].losses+=1;
   });
-  const derived={};
-  Object.keys(tally).forEach(team=>{
-    derived[team]=inferKoStageByWinsAndLosses(tally[team].wins,tally[team].losses);
-  });
-  return derived;
+
+  const koStarted=getKoPlayedFixtures().length>0;
+
+  function stageFromStatus(team){
+    if(!koStarted)return getResult(team).stage;
+    const rec=status[team]||{wins:0,losses:0,hasKoFixture:false};
+    if(rec.losses>0){
+      const byWins=['Round of 32','Round of 16','Quarterfinals','Semifinals','Final (runner-up)'];
+      return byWins[Math.min(rec.wins,byWins.length-1)];
+    }
+    if(rec.wins>0){
+      const activeByWins=['Group stage exit','Round of 16','Quarterfinals','Semifinals','Final (runner-up)','Champion'];
+      return activeByWins[Math.min(rec.wins,activeByWins.length-1)];
+    }
+    return rec.hasKoFixture?'Round of 32':'Group stage exit';
+  }
+
+  function isActive(team){
+    const stage=stageFromStatus(team);
+    return stage!=='Group stage exit';
+  }
+
+  return{status,koStarted,stageFromStatus,isActive};
 }
 
 function buildLeaderboard(){
-  const koFromResults=Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
-  const koPlayed=getKoPlayedFixtures().length>0;
-  const useFixtureDerivedStages=!koFromResults&&koPlayed;
-  const fixtureDerivedStages=useFixtureDerivedStages?buildFixtureDerivedKoStages():{};
-  const knockoutsStarted=koFromResults||koPlayed;
-
-  function getEffectiveStage(team){
-    if(useFixtureDerivedStages&&fixtureDerivedStages[team])return fixtureDerivedStages[team];
-    return getResult(team).stage;
-  }
-
-  function getEffectivePoints(team){
-    const stage=getEffectiveStage(team);
-    return POINTS_MAP[stage]??0;
-  }
+  const ko=buildKoTeamStatus();
+  const knockoutsStarted=ko.koStarted||Object.values(RESULTS_DATA).some(r=>r.stage!=='Group stage exit');
 
   const rows=PARTICIPANTS.map(p=>{
-    const stagePoints=p.teams.reduce((s,t)=>s+getEffectivePoints(t),0);
-    const active=p.teams.filter(t=>getEffectiveStage(t)!=='Group stage exit').length;
+    const stagePoints=p.teams.reduce((s,t)=>s+(POINTS_MAP[ko.stageFromStatus(t)]??0),0);
+    const active=p.teams.filter(t=>ko.isActive(t)).length;
     const gf=p.teams.reduce((s,t)=>s+(RESULTS_DATA[t]?.gf||0),0);
     return{
       name:p.name,
@@ -863,25 +863,8 @@ function renderInsights(insights,started){
 }
 
 function renderLeagueTable(lb,started){
-  const koTallies={};
-  PARTICIPANTS.forEach(p=>p.teams.forEach(t=>{koTallies[t]={wins:0,losses:0};}));
-  getKoPlayedFixtures().forEach(f=>{
-    const homeWin=f.hg>f.ag;
-    const winner=homeWin?f.home:f.away;
-    const loser=homeWin?f.away:f.home;
-    if(koTallies[winner])koTallies[winner].wins+=1;
-    if(koTallies[loser])koTallies[loser].losses+=1;
-  });
-  const hasKoData=getKoPlayedFixtures().length>0;
-
-  function isKnockedOut(team){
-    const stage=(RESULTS_DATA[team]&&RESULTS_DATA[team].stage)||'Group stage exit';
-    if(!hasKoData)return stage==='Group stage exit';
-    const rec=koTallies[team]||{wins:0,losses:0};
-    if(rec.losses>0)return true;
-    if(rec.wins>0)return false;
-    return stage==='Group stage exit';
-  }
+  const ko=buildKoTeamStatus();
+  function isKnockedOut(team){return !ko.isActive(team);}
 
   const rows=[...lb];
   const rendered=rows.map((e,i)=>{
@@ -900,17 +883,15 @@ function renderLeagueTable(lb,started){
       <td class="lt-name" style="${nameStyle}">${e.name}</td>
       <td class="lt-teams">${teamTags}</td>
       <td class="lt-pts" style="${totalStyle}">${started?e.score:'—'}</td>
-      <td class="lt-stage">${started?e.active:'—'}</td>
     </tr>`;
   }).join('');
-  return`<div class="table-legend"><strong>Tournament Leaderboard:</strong> Tournament Pts = sum of each player's 4 teams using Group exit 0, R32 2, R16 4, QF 6, SF 10, Runner-up 15, Champion 25. Active Teams = teams still alive.</div>
+  return`<div class="table-legend"><strong>Tournament Leaderboard:</strong> Tournament Pts = sum of each player's 4 teams using Group exit 0, R32 2, R16 4, QF 6, SF 10, Runner-up 15, Champion 25. Soft strike-through in Teams means knocked out.</div>
   <table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">#</th>
       <th class="lt-name">Player</th>
       <th class="lt-teams">Teams</th>
       <th class="lt-pts" style="text-align:right">Tournament Pts</th>
-      <th class="lt-stage" style="text-align:right">Active Teams</th>
     </tr></thead>
     <tbody>${rendered}</tbody>
   </table>`;
