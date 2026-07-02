@@ -1352,12 +1352,12 @@ const statusLabel=hasScore?'Result '+m.hg+' \u2013 '+m.ag:(m.derivedStatus==='to
       <div class="h2h-teams-block">
         <div class="h2h-competitor">
           <div class="coworker-identity">${m.homeOwner}${homeWinBadge}</div>
-          <div class="nation-identity">🏠 ${m.home} &middot; ${m.homeStage}</div>
+          <div class="nation-identity">🏠 ${m.home}</div>
         </div>
         <div class="h2h-divider">VS</div>
         <div class="h2h-competitor">
           <div class="coworker-identity">${m.awayOwner}${awayWinBadge}</div>
-          <div class="nation-identity">✈️ ${m.away} &middot; ${m.awayStage}</div>
+          <div class="nation-identity">✈️ ${m.away}</div>
         </div>
       </div>
     </div>`;
@@ -1420,9 +1420,8 @@ setInterval(function(){
         BANTER_FEED.splice(0,BANTER_FEED.length);
         if(d.banter_feed)d.banter_feed.forEach(function(b){BANTER_FEED.push(b);});
         if(d.scorers){SCORERS_DATA.splice(0,SCORERS_DATA.length);d.scorers.forEach(function(s){SCORERS_DATA.push(s);});}
-        var started=Object.values(RESULTS_DATA).some(function(r){return r.gf>0||r.ga>0;});
         var lb=buildLeaderboard();
-        document.getElementById('cgrid').innerHTML=renderLeagueTable(lb,started);
+        document.getElementById('cgrid').innerHTML=renderGroupStageFinalScoreboard();
         var gbEl=document.getElementById('gb-sec');
         if(gbEl)gbEl.innerHTML=renderTopScorers(SCORERS_DATA);
         initCounters();
