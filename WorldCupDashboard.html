@@ -433,31 +433,44 @@ const FIXTURES = [
 ];
 
 const BANTER_FEED = [
-  'Fresh scores. Fresh heartbreak. Fresh hope. It’s the World Cup.',
+  'Fresh scores. Fresh heartbreak. Fresh hope. It\u2019s the World Cup.',
+  'Golden Boot leader: Kylian Mbappé (France (Nuno\u2019s pick)) with 6 goals. That\u2019s what we\u2019re here for.',
+  'Pritish\u2019s England have Harry Kane on 5 goals. Value pick.',
+  'Steve\u2019s DR Congo have Yoane Wissa on 3 goals. The return on investment is very real.',
+  'Damir\u2019s Brazil have Vinicius Junior on 4 goals. Not bad at all.',
+  'Hugh\u2019s Argentina have Lionel Messi on 6 goals. That\u2019s doing the business.',
+  'Adam\u2019s Germany have Kai Havertz on 3 goals. That\u2019s doing the business.',
+  'James\u2019s Morocco have Ismael Saibari on 3 goals. Not bad at all.',
+  'Pardeep\u2019s teams haven\u2019t troubled the scorers chart yet. Defending is a skill too. Allegedly.',
+  'Ajit\u2019s Norway have Erling Haaland on 5 goals. That\u2019s doing the business.',
+  'Nuno\u2019s France have Kylian Mbappé on 6 goals. Value pick.',
+  'Quentin\u2019s USA have Folarin Balogun on 3 goals. That\u2019s doing the business.',
+  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Consistent, if nothing else.',
+  'Mark\u2019s Mexico have Julián Quiñones on 3 goals. Value pick.',
   'Bottom of the table: Mark on 0 points. The floor is lava and Mark is standing in it.'
 ];
-const LAST_UPDATED = '02 Jul 11:00 UTC';
+const LAST_UPDATED = '02 Jul 18:17 UTC';
 const SCORERS_DATA = [
+  {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:6,assists:2},
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:6,assists:0},
+  {player:'Erling Haaland',team:'Norway',owner:'Ajit',goals:5,assists:0},
+  {player:'Harry Kane',team:'England',owner:'Pritish',goals:5,assists:0},
   {player:'Vinicius Junior',team:'Brazil',owner:'Damir',goals:4,assists:1},
-  {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:4,assists:2},
-  {player:'Erling Haaland',team:'Norway',owner:'Ajit',goals:4,assists:0},
-  {player:'Ousmane Dembélé',team:'France',owner:'Nuno',goals:4,assists:1},
+  {player:'Ousmane Dembélé',team:'France',owner:'Nuno',goals:4,assists:2},
+  {player:'Ismaïla Sarr',team:'Senegal',owner:'Damir',goals:4,assists:1},
+  {player:'Julián Quiñones',team:'Mexico',owner:'Mark',goals:3,assists:1},
+  {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:3,assists:0},
   {player:'Ismael Saibari',team:'Morocco',owner:'James',goals:3,assists:0},
+  {player:'Kai Havertz',team:'Germany',owner:'Adam',goals:3,assists:0},
   {player:'Deniz Undav',team:'Germany',owner:'Adam',goals:3,assists:2},
   {player:'Elijah Just',team:'New Zealand',owner:'Quentin',goals:3,assists:0},
   {player:'Yoane Wissa',team:'DR Congo',owner:'Steve',goals:3,assists:0},
-  {player:'Harry Kane',team:'England',owner:'Pritish',goals:3,assists:0},
   {player:'Johan Manzambi',team:'Switzerland',owner:'Pritish',goals:3,assists:1},
   {player:'Jonathan David',team:'Canada',owner:'Hugh',goals:3,assists:0},
   {player:'Matheus Cunha',team:'Brazil',owner:'Damir',goals:3,assists:0},
   {player:'Brian Brobbey',team:'Netherlands',owner:'Steve',goals:3,assists:0},
-  {player:'Ismaïla Sarr',team:'Senegal',owner:'Damir',goals:3,assists:1},
-  {player:'Julián Quiñones',team:'Mexico',owner:'Mark',goals:2,assists:0},
-  {player:'Cyle Larin',team:'Canada',owner:'Hugh',goals:2,assists:0},
-  {player:'Folarin Balogun',team:'USA',owner:'Quentin',goals:2,assists:0},
-  {player:'Kai Havertz',team:'Germany',owner:'Adam',goals:2,assists:0},
-  {player:'Crysencio Summerville',team:'Netherlands',owner:'Steve',goals:2,assists:1}
+  {player:'Cody Gakpo',team:'Netherlands',owner:'Steve',goals:3,assists:1},
+  {player:'Raúl Jiménez',team:'Mexico',owner:'Mark',goals:2,assists:0}
 ];
 const RESULTS_DATA = {
   'Algeria':{stage:'Group stage exit',gf:5,ga:7},
@@ -473,7 +486,7 @@ const RESULTS_DATA = {
   'Croatia':{stage:'Group stage exit',gf:5,ga:5},
   'Curaçao':{stage:'Group stage exit',gf:1,ga:9},
   'Czechia':{stage:'Group stage exit',gf:2,ga:6},
-  'Côte d’Ivoire':{stage:'Group stage exit',gf:5,ga:4},
+  'Côte d\u2019Ivoire':{stage:'Group stage exit',gf:5,ga:4},
   'DR Congo':{stage:'Group stage exit',gf:5,ga:5},
   'Ecuador':{stage:'Group stage exit',gf:2,ga:4},
   'Egypt':{stage:'Group stage exit',gf:5,ga:3},
