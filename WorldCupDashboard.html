@@ -947,14 +947,19 @@ function renderGroupStageFinalScoreboard(){
     {rank:12,name:'James',teams:[['Morocco',7],['Iran',3],['Uzbekistan',0],['Jordan',0]],total:10,gf:11,ga:24,gd:'-13'},
   ];
 
-  const maxFifaPts=Math.max(...finalRows.map(r=>r.total));
+  const fifaWinner=[...finalRows].sort((a,b)=>{
+    if(b.total!==a.total)return b.total-a.total;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    if(a.ga!==b.ga)return a.ga-b.ga;
+    return a.name.localeCompare(b.name);
+  })[0]?.name;
   const maxScorer=Math.max(...finalRows.map(r=>getScorerGoalsByOwner(r.name)));
   const minGa=Math.min(...finalRows.map(r=>r.ga));
   const minFifaPts=Math.min(...finalRows.map(r=>r.total));
 
   const rendered=finalRows.map(entry=>{
     const groupStageScore=
-      (entry.total===maxFifaPts?600:0)+
+      (entry.name===fifaWinner?600:0)+
       (getScorerGoalsByOwner(entry.name)===maxScorer?300:0)+
       (entry.ga===minGa?300:0)+
       (entry.total===minFifaPts?300:0);
