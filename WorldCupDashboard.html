@@ -845,22 +845,73 @@ function renderLeagueTable(lb,started){
   </table>`;
 }
 
-function renderFinalRankingsTable(lb,started){
-  const rows=[...lb];
-  const rendered=rows.map(e=>`<tr>
+function isGroupStageFixture(f){
+  const g=(f&&f.group)||'';
+  return /^GROUP_/i.test(g)||/^Group\s+[A-L]$/i.test(g)||/^[A-L]$/i.test(g);
+}
+
+function getTeamGroupStagePts(team){
+  let pts=0;
+  FIXTURES.forEach(f=>{
+    if(!isGroupStageFixture(f))return;
+    if(f.hg===undefined||f.ag===undefined)return;
+    if(f.home===team){pts+=f.hg>f.ag?3:f.hg===f.ag?1:0;}
+    else if(f.away===team){pts+=f.ag>f.hg?3:f.hg===f.ag?1:0;}
+  });
+  return pts;
+}
+
+function getTeamGroupStageGoals(team){
+  let gf=0;
+  FIXTURES.forEach(f=>{
+    if(!isGroupStageFixture(f))return;
+    if(f.hg===undefined||f.ag===undefined)return;
+    if(f.home===team)gf+=f.hg;
+    else if(f.away===team)gf+=f.ag;
+  });
+  return gf;
+}
+
+function renderGroupStageFinalScoreboard(){
+  const rows=PARTICIPANTS.map(p=>{
+    const groupPts=p.teams.reduce((s,t)=>s+getTeamGroupStagePts(t),0);
+    const groupGf=p.teams.reduce((s,t)=>s+getTeamGroupStageGoals(t),0);
+    return {
+      name:p.name,
+      teams:p.teams,
+      score:groupPts,
+      gf:groupGf,
+    };
+  });
+
+  rows.sort((a,b)=>{
+    if(b.score!==a.score)return b.score-a.score;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    return a.name.localeCompare(b.name);
+  });
+
+  const ranked=[];
+  for(let i=0;i<rows.length;i++){
+    if(i===0){ranked.push({...rows[i],rank:1});continue;}
+    const prev=ranked[i-1];
+    const sameRank=prev.score===rows[i].score&&prev.gf===rows[i].gf;
+    ranked.push({...rows[i],rank:sameRank?prev.rank:i+1});
+  }
+
+  const rendered=ranked.map(e=>`<tr>
     <td class="lt-pos">${e.rank}</td>
     <td class="lt-name">${e.name}</td>
-    <td class="lt-pts">${started?e.score:'—'}</td>
-    <td class="lt-stage">${started?e.stagePoints:'—'}</td>
-    <td class="lt-gf">${started?e.active:'—'}</td>
+    <td class="lt-teams">${e.teams.map(t=>`<span class="lt-team">${t}</span>`).join('')}</td>
+    <td class="lt-pts">${e.score}</td>
+    <td class="lt-gf">${e.gf}</td>
   </tr>`).join('');
   return`<table class="league-table glass">
     <thead><tr>
       <th class="lt-pos">Rank</th>
       <th class="lt-name">Player</th>
-      <th class="lt-pts" style="text-align:right">Total</th>
-      <th class="lt-stage" style="text-align:right">Stage pts</th>
-      <th class="lt-gf" style="text-align:right">Active teams</th>
+      <th class="lt-teams">Teams</th>
+      <th class="lt-pts" style="text-align:right">Group pts</th>
+      <th class="lt-gf" style="text-align:right">Group GF</th>
     </tr></thead>
     <tbody>${rendered}</tbody>
   </table>`;
@@ -938,8 +989,8 @@ function renderAll(){
 
     <section class="section">
       <div class="sec-label">Standings</div>
-      <h2 class="sec-title">Final Rankings Summary</h2>
-      <div id="cgrid">${renderFinalRankingsTable(lb,knockoutsStarted)}</div>
+      <h2 class="sec-title">Group Stage Final Scoreboard</h2>
+      <div id="cgrid">${renderGroupStageFinalScoreboard()}</div>
     </section>
 
     <footer class="footer">
