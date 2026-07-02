@@ -976,6 +976,12 @@ function renderAll(){
     </section>
 
     <section class="section">
+      <div class="sec-label">Standings</div>
+      <h2 class="sec-title">Knockout Leaderboard</h2>
+      <div id="ko-leaderboard">${renderLeagueTable(lb,knockoutsStarted)}</div>
+    </section>
+
+    <section class="section">
       <div class="sec-label">Knockout Stage</div>
       <h2 class="sec-title">Round of 32 Onward Schedule</h2>
       <div id="sched-sec">${renderFixtureSchedule()}</div>
@@ -1420,7 +1426,10 @@ setInterval(function(){
         BANTER_FEED.splice(0,BANTER_FEED.length);
         if(d.banter_feed)d.banter_feed.forEach(function(b){BANTER_FEED.push(b);});
         if(d.scorers){SCORERS_DATA.splice(0,SCORERS_DATA.length);d.scorers.forEach(function(s){SCORERS_DATA.push(s);});}
+        var knockoutsStarted=Object.values(RESULTS_DATA).some(function(r){return r.stage!=='Group stage exit';});
         var lb=buildLeaderboard();
+        var koEl=document.getElementById('ko-leaderboard');
+        if(koEl)koEl.innerHTML=renderLeagueTable(lb,knockoutsStarted);
         document.getElementById('cgrid').innerHTML=renderGroupStageFinalScoreboard();
         var gbEl=document.getElementById('gb-sec');
         if(gbEl)gbEl.innerHTML=renderTopScorers(SCORERS_DATA);
