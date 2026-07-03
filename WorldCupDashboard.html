@@ -420,8 +420,8 @@ const FIXTURES = [
   {group:'KO',home:'Belgium',away:'Senegal',d:'2026-07-02',t:'04:00',hg:3,ag:2},
   {group:'KO',home:'USA',away:'Bosnia and Herzegovina',d:'2026-07-02',t:'08:00',hg:2,ag:0},
   {group:'KO',home:'Spain',away:'Austria',d:'2026-07-03',t:'03:00',hg:3,ag:0},
-  {group:'KO',home:'Portugal',away:'Croatia',d:'2026-07-03',t:'07:00'},
-  {group:'KO',home:'Switzerland',away:'Algeria',d:'2026-07-03',t:'11:00'},
+  {group:'KO',home:'Portugal',away:'Croatia',d:'2026-07-03',t:'07:00',hg:2,ag:1},
+  {group:'KO',home:'Switzerland',away:'Algeria',d:'2026-07-03',t:'11:00',hg:2,ag:0},
   {group:'KO',home:'Australia',away:'Egypt',d:'2026-07-04',t:'02:00'},
   {group:'KO',home:'Argentina',away:'Cape Verde Islands',d:'2026-07-04',t:'06:00'},
   {group:'KO',home:'Colombia',away:'Ghana',d:'2026-07-04',t:'09:30'},
@@ -433,23 +433,23 @@ const FIXTURES = [
 ];
 
 const BANTER_FEED = [
-  'Results updated. If your teams are doing well: don\u2019t be smug. If they\u2019re not: condolences.',
+  'Another update from the tournament. Someone\u2019s about to get very happy and someone\u2019s about to be insufferable about it.',
   'Golden Boot leader: Kylian Mbappé (France (Nuno\u2019s pick)) with 6 goals. That\u2019s what we\u2019re here for.',
-  'Pritish\u2019s England have Harry Kane on 5 goals. Not bad at all.',
+  'Pritish\u2019s England have Harry Kane on 5 goals. Value pick.',
   'Steve\u2019s DR Congo have Yoane Wissa on 3 goals. Not bad at all.',
   'Damir\u2019s Brazil have Vinicius Junior on 4 goals. Value pick.',
-  'Hugh\u2019s Argentina have Lionel Messi on 6 goals. Not bad at all.',
-  'Adam\u2019s Germany have Kai Havertz on 3 goals. That\u2019s doing the business.',
+  'Hugh\u2019s Argentina have Lionel Messi on 6 goals. The return on investment is very real.',
+  'Adam\u2019s Germany have Kai Havertz on 3 goals. Not bad at all.',
   'James\u2019s Morocco have Ismael Saibari on 3 goals. Value pick.',
-  'Pardeep\u2019s teams haven\u2019t troubled the scorers chart yet. Consistent, if nothing else.',
-  'Ajit\u2019s Norway have Erling Haaland on 5 goals. Making the sweepstake worth watching.',
-  'Nuno\u2019s France have Kylian Mbappé on 6 goals. Not bad at all.',
+  'Pardeep\u2019s teams haven\u2019t troubled the scorers chart yet. The drought is real.',
+  'Ajit\u2019s Norway have Erling Haaland on 5 goals. Not bad at all.',
+  'Nuno\u2019s France have Kylian Mbappé on 6 goals. The return on investment is very real.',
   'Quentin\u2019s USA have Folarin Balogun on 3 goals. Value pick.',
-  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. Defending is a skill too. Allegedly.',
+  'Nomso\u2019s teams haven\u2019t troubled the scorers chart yet. The drought is real.',
   'Mark\u2019s Mexico have Julián Quiñones on 3 goals. The return on investment is very real.',
   'Bottom of the table: Mark on 0 points. The floor is lava and Mark is standing in it.'
 ];
-const LAST_UPDATED = '02 Jul 23:43 UTC';
+const LAST_UPDATED = '03 Jul 10:14 UTC';
 const SCORERS_DATA = [
   {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:6,assists:2},
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:6,assists:0},
@@ -466,14 +466,14 @@ const SCORERS_DATA = [
   {player:'Deniz Undav',team:'Germany',owner:'Adam',goals:3,assists:2},
   {player:'Elijah Just',team:'New Zealand',owner:'Quentin',goals:3,assists:0},
   {player:'Yoane Wissa',team:'DR Congo',owner:'Steve',goals:3,assists:0},
-  {player:'Johan Manzambi',team:'Switzerland',owner:'Pritish',goals:3,assists:1},
+  {player:'Johan Manzambi',team:'Switzerland',owner:'Pritish',goals:3,assists:2},
   {player:'Jonathan David',team:'Canada',owner:'Hugh',goals:3,assists:0},
   {player:'Matheus Cunha',team:'Brazil',owner:'Damir',goals:3,assists:0},
   {player:'Brian Brobbey',team:'Netherlands',owner:'Steve',goals:3,assists:0},
   {player:'Cody Gakpo',team:'Netherlands',owner:'Steve',goals:3,assists:1}
 ];
 const RESULTS_DATA = {
-  'Algeria':{stage:'Group stage exit',gf:5,ga:7},
+  'Algeria':{stage:'Group stage exit',gf:5,ga:9},
   'Argentina':{stage:'Group stage exit',gf:8,ga:1},
   'Australia':{stage:'Group stage exit',gf:2,ga:2},
   'Austria':{stage:'Group stage exit',gf:6,ga:9},
@@ -483,7 +483,7 @@ const RESULTS_DATA = {
   'Canada':{stage:'Group stage exit',gf:9,ga:3},
   'Cape Verde':{stage:'Group stage exit',gf:0,ga:0},
   'Colombia':{stage:'Group stage exit',gf:4,ga:1},
-  'Croatia':{stage:'Group stage exit',gf:5,ga:5},
+  'Croatia':{stage:'Group stage exit',gf:6,ga:7},
   'Curaçao':{stage:'Group stage exit',gf:1,ga:9},
   'Czechia':{stage:'Group stage exit',gf:2,ga:6},
   'Côte d\u2019Ivoire':{stage:'Group stage exit',gf:5,ga:4},
@@ -506,7 +506,7 @@ const RESULTS_DATA = {
   'Norway':{stage:'Group stage exit',gf:10,ga:8},
   'Panama':{stage:'Group stage exit',gf:0,ga:4},
   'Paraguay':{stage:'Group stage exit',gf:7,ga:8},
-  'Portugal':{stage:'Group stage exit',gf:6,ga:1},
+  'Portugal':{stage:'Group stage exit',gf:8,ga:2},
   'Qatar':{stage:'Group stage exit',gf:2,ga:10},
   'Saudi Arabia':{stage:'Group stage exit',gf:1,ga:5},
   'Scotland':{stage:'Group stage exit',gf:1,ga:4},
@@ -515,7 +515,7 @@ const RESULTS_DATA = {
   'South Korea':{stage:'Group stage exit',gf:2,ga:3},
   'Spain':{stage:'Group stage exit',gf:8,ga:0},
   'Sweden':{stage:'Group stage exit',gf:7,ga:10},
-  'Switzerland':{stage:'Group stage exit',gf:7,ga:3},
+  'Switzerland':{stage:'Group stage exit',gf:9,ga:3},
   'Tunisia':{stage:'Group stage exit',gf:2,ga:12},
   'Türkiye':{stage:'Group stage exit',gf:3,ga:5},
   'USA':{stage:'Group stage exit',gf:10,ga:4},
