@@ -818,23 +818,23 @@ function renderCountdown(){
 }
 
 function renderFixtures(today){
-  const ROUND_OF_32_START='2026-06-30';
-  const knockoutsOnly=FIXTURES.filter(f=>f.d>=ROUND_OF_32_START);
+  const QUARTERFINALS_START='2026-07-07';
+  const quarterfinalsOnward=FIXTURES.filter(f=>f.d>=QUARTERFINALS_START);
   const tomorrow=new Date(today+'T00:00:00');
   tomorrow.setDate(tomorrow.getDate()+1);
   const tomorrowStr=`${tomorrow.getFullYear()}-${p2(tomorrow.getMonth()+1)}-${p2(tomorrow.getDate())}`;
 
-  let todayFix=knockoutsOnly.filter(f=>f.d===today);
-  let tomorrowFix=knockoutsOnly.filter(f=>f.d===tomorrowStr);
+  let todayFix=quarterfinalsOnward.filter(f=>f.d===today);
+  let tomorrowFix=quarterfinalsOnward.filter(f=>f.d===tomorrowStr);
 
   // If no matches today, find next day with matches and show that + the day after
   if(!todayFix.length){
-    const upcoming=knockoutsOnly.filter(f=>f.d>=today).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
-    if(!upcoming.length)return`<div class="fix-empty">No Round-of-32 (or later) fixtures loaded yet.</div>`;
+    const upcoming=quarterfinalsOnward.filter(f=>f.d>=today).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+    if(!upcoming.length)return`<div class="fix-empty">No Quarterfinal (or later) fixtures loaded yet.</div>`;
     const nextDay=upcoming[0].d;
-    todayFix=knockoutsOnly.filter(f=>f.d===nextDay);
+    todayFix=quarterfinalsOnward.filter(f=>f.d===nextDay);
     const afterNext=upcoming.find(f=>f.d>nextDay);
-    tomorrowFix=afterNext?knockoutsOnly.filter(f=>f.d===afterNext.d):[];
+    tomorrowFix=afterNext?quarterfinalsOnward.filter(f=>f.d===afterNext.d):[];
   }
 
   function makeCards(fixes,label){
@@ -864,8 +864,8 @@ function renderFixtures(today){
 }
 
 function renderFixtureSchedule(){
-  const ROUND_OF_32_START='2026-06-30';
-  const knockoutsOnly=FIXTURES.filter(f=>f.d>=ROUND_OF_32_START);
+  const QUARTERFINALS_START='2026-07-07';
+  const quarterfinalsOnward=FIXTURES.filter(f=>f.d>=QUARTERFINALS_START);
   const today=todayStr();
   const cutFuture=new Date(today+'T00:00:00');
   cutFuture.setDate(cutFuture.getDate()+3);
@@ -873,12 +873,12 @@ function renderFixtureSchedule(){
 
   // Group fixtures by date
   const byDate={};
-  knockoutsOnly.forEach(f=>{
+  quarterfinalsOnward.forEach(f=>{
     if(!byDate[f.d])byDate[f.d]=[];
     byDate[f.d].push(f);
   });
   const dates=Object.keys(byDate).sort();
-  if(!dates.length)return'<div class="fix-empty">No Round-of-32 (or later) fixtures loaded yet.</div>';
+  if(!dates.length)return'<div class="fix-empty">No Quarterfinal (or later) fixtures loaded yet.</div>';
 
   function dayLabel(d){
     if(d===today)return'Today';
@@ -1165,7 +1165,7 @@ function renderAll(){
 
     <section class="section">
       <div class="sec-label">Knockout Stage</div>
-      <h2 class="sec-title">Round of 32 Onward Schedule</h2>
+      <h2 class="sec-title">Quarterfinals Onward Schedule</h2>
       <div id="sched-sec">${renderFixtureSchedule()}</div>
     </section>
 
