@@ -420,6 +420,7 @@ const FIXTURES = [
   {group:'KO',home:'England',away:'DR Congo',d:'2026-07-02',t:'00:00',hg:2,ag:1},
   {group:'KO',home:'Belgium',away:'Senegal',d:'2026-07-02',t:'04:00',hg:3,ag:2},
   {group:'KO',home:'USA',away:'Bosnia and Herzegovina',d:'2026-07-02',t:'08:00',hg:2,ag:0},
+<<<<<<< HEAD
   {group:'KO',home:'Spain',away:'Austria',d:'2026-07-03',t:'03:00',hg:3,ag:0},
   {group:'KO',home:'Portugal',away:'Croatia',d:'2026-07-03',t:'07:00',hg:2,ag:1},
   {group:'KO',home:'Switzerland',away:'Algeria',d:'2026-07-03',t:'11:00',hg:2,ag:0},
@@ -431,6 +432,26 @@ const FIXTURES = [
   {group:'KO',home:'Brazil',away:'Norway',d:'2026-07-06',t:'04:00',hg:1,ag:2},
   {group:'KO',home:'Mexico',away:'England',d:'2026-07-06',t:'08:00',hg:2,ag:3},
   {group:'KO',home:'USA',away:'Belgium',d:'2026-07-07',t:'08:00',hg:1,ag:4},
+=======
+  {group:'KO',home:'Spain',away:'Austria',d:'2026-07-03',t:'03:00',hg:2,ag:1},
+  {group:'KO',home:'Portugal',away:'Croatia',d:'2026-07-03',t:'07:00',hg:1,ag:0},
+  {group:'KO',home:'Switzerland',away:'Algeria',d:'2026-07-03',t:'11:00',hg:2,ag:1},
+  {group:'KO',home:'Australia',away:'Egypt',d:'2026-07-04',t:'02:00',hg:0,ag:1},
+  {group:'KO',home:'Argentina',away:'Cape Verde Islands',d:'2026-07-04',t:'06:00',hg:3,ag:0},
+  {group:'KO',home:'Colombia',away:'Ghana',d:'2026-07-04',t:'09:30',hg:2,ag:1},
+  {group:'KO',home:'Canada',away:'Morocco',d:'2026-07-05',t:'01:00',hg:1,ag:2},
+  {group:'KO',home:'Paraguay',away:'France',d:'2026-07-05',t:'05:00',hg:1,ag:3},
+  {group:'KO',home:'Brazil',away:'Norway',d:'2026-07-06',t:'04:00',hg:1,ag:2},
+  {group:'KO',home:'Mexico',away:'England',d:'2026-07-06',t:'08:00',hg:1,ag:2},
+  {group:'KO',home:'Spain',away:'Portugal',d:'2026-07-07',t:'02:00',hg:2,ag:1},
+  {group:'KO',home:'Switzerland',away:'Colombia',d:'2026-07-07',t:'05:00',hg:1,ag:0},
+  {group:'KO',home:'USA',away:'Belgium',d:'2026-07-07',t:'08:00',hg:1,ag:2},
+  {group:'KO',home:'Argentina',away:'Egypt',d:'2026-07-07',t:'11:00',hg:2,ag:1},
+  {group:'KO',home:'France',away:'Norway',d:'2026-07-09',t:'03:00'},
+  {group:'KO',home:'England',away:'Belgium',d:'2026-07-09',t:'08:00'},
+  {group:'KO',home:'Spain',away:'Morocco',d:'2026-07-10',t:'03:00'},
+  {group:'KO',home:'Argentina',away:'Switzerland',d:'2026-07-10',t:'08:00'},
+>>>>>>> bc3849b (Fix KO elimination strike-through logic)
 ];
 
 const BANTER_FEED = [
@@ -499,7 +520,11 @@ const BANTER_FEED = [
   'Current leader: Ajit with 18 points. Everyone else is playing for second place.',
   'Bottom of the table: Nomso on 0 points. The floor is lava and Nomso is standing in it.'
 ];
+<<<<<<< HEAD
 const LAST_UPDATED = '07 Jul 23:30 UTC';
+=======
+const LAST_UPDATED = '07 Jul 23:59 UTC';
+>>>>>>> bc3849b (Fix KO elimination strike-through logic)
 const SCORERS_DATA = [
   {player:'Lionel Messi',team:'Argentina',owner:'Hugh',goals:8,assists:1},
   {player:'Kylian Mbappé',team:'France',owner:'Nuno',goals:7,assists:2},
@@ -578,6 +603,15 @@ const RESULTS_DATA = {
 ═══════════════════════════════════════════ */
 const TEAM_OWNER = {};
 PARTICIPANTS.forEach(p => p.teams.forEach(t => TEAM_OWNER[t] = p.name));
+const TEAM_ALIASES = {
+  'Cape Verde Islands': 'Cape Verde',
+};
+function canonTeamName(team){
+  return TEAM_ALIASES[team] || team;
+}
+Object.entries(TEAM_ALIASES).forEach(([alias, canonical])=>{
+  if(TEAM_OWNER[canonical])TEAM_OWNER[alias]=TEAM_OWNER[canonical];
+});
 const DEFAULT_R = {stage:'Group stage exit',gf:0,ga:0};
 function getResult(t){return RESULTS_DATA[t]||DEFAULT_R}
 function getPoints(t){return POINTS_MAP[getResult(t).stage]??0}
@@ -599,12 +633,14 @@ function buildKoTeamStatus(){
 
   FIXTURES.forEach(f=>{
     if(f.group!=='KO')return;
-    if(status[f.home])status[f.home].hasKoFixture=true;
-    if(status[f.away])status[f.away].hasKoFixture=true;
+    const home=canonTeamName(f.home);
+    const away=canonTeamName(f.away);
+    if(status[home])status[home].hasKoFixture=true;
+    if(status[away])status[away].hasKoFixture=true;
     if(f.hg===undefined||f.ag===undefined||f.hg===f.ag)return;
     const homeWin=f.hg>f.ag;
-    const winner=homeWin?f.home:f.away;
-    const loser=homeWin?f.away:f.home;
+    const winner=homeWin?home:away;
+    const loser=homeWin?away:home;
     if(status[winner])status[winner].wins+=1;
     if(status[loser])status[loser].losses+=1;
   });
@@ -626,8 +662,14 @@ function buildKoTeamStatus(){
   }
 
   function isActive(team){
-    const stage=stageFromStatus(team);
-    return stage!=='Group stage exit';
+    if(!koStarted){
+      return getResult(team).stage!=='Group stage exit';
+    }
+    const rec=status[team]||{wins:0,losses:0,hasKoFixture:false};
+    if(rec.losses>0)return false;
+    if(rec.wins>0)return true;
+    if(rec.hasKoFixture)return true;
+    return false;
   }
 
   return{status,koStarted,stageFromStatus,isActive};
